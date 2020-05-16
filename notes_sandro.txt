@@ -1,0 +1,35 @@
+----------------
+ToDo:
+----------------
+
+1. normalize the brightness of the pictures
+2. detect the center of the spiral (what exactly is the spiral?)
+3. detect each electrode contact
+  - they are equally spaced (prediction of invisible contacts is thus possible)
+  - innermost is contact 1, outermost contact 12
+4. compute angular insertion depth (in degrees)
+
+
+----------------
+Concrete steps:
+----------------
+
+1.
+  - cropping to get rid the watermark - DONE (first 23 rows cropped)
+  - brightness adjusted - DONE
+2.
+  - detect edges in preop pic
+  - detect 3 levels (bone, fluid, air) and maybe merge air and bone
+3.
+  - import each postop pic
+  - count the number of found electrodes on each pic and print
+    to see if there are nearly 12
+  - ...
+
+
+
+----------------
+General Notes:
+----------------
+- CT image: dense structures are brighter:
+  - on preop pic: bone, fluid, air; white, gray, black
