@@ -18,7 +18,7 @@ for i, image in enumerate(image_path):
   data[patient_ID] = [pre_img, post_img]
 
 
-# I realized that the watermark always goes exactly down to the 23th pixel
+# I found that the watermark always goes exactly down to the 23th pixel
 # with the following code:
 if 0:
   for patient in patient_IDs:  
@@ -44,30 +44,30 @@ for patient in patient_IDs:
     val_range = max_val - min_val
     # calculate new values
     data[patient][i] = ((data[patient][i] - min_val) / val_range) * 255
-  
-  """Old style (pre and post individually):
-  # Crop away the first 23 pixelrows of every picture
-  data[patient][0] = data[patient][0][23:, :]
-  data[patient][1] = data[patient][1][23:, :]
-  ### normalize each individual pic to hold values from 0 to 255
-  # get the min and max values
-  min0 = np.min(data[patient][0])
-  max0 = np.max(data[patient][0])
-  min1 = np.min(data[patient][1])
-  max1 = np.max(data[patient][1])
-  # store the range, calculate new values and assign them
-  range0 = max0 - min0
-  range1 = max1 - min1
-  data[patient][0] = ((data[patient][0] - min0) / range0) * 255
-  data[patient][1] = ((data[patient][1] - min1) / range1) * 255
-  # Verify that all pictures have values spaning from 0 to 255
-  if 1:
-    print("\n  patient:", patient)
-    print("old pre:  " + str(min0) + " to " + str(max0))
-    print("old post: " + str(min1) + " to " + str(max1))  
-     min0 = np.min(data[patient][0])
+
+"""Old style (pre and post individually):
+    # Crop away the first 23 pixelrows of every picture
+    data[patient][0] = data[patient][0][23:, :]
+    data[patient][1] = data[patient][1][23:, :]
+    ### normalize each individual pic to hold values from 0 to 255
+    # get the min and max values
+    min0 = np.min(data[patient][0])
     max0 = np.max(data[patient][0])
     min1 = np.min(data[patient][1])
     max1 = np.max(data[patient][1])
-    print("new pre:  " + str(int(min0)) + " to " + str(int(max0)))
-    print("new post: " + str(int(min1)) + " to " + str(int(max1)))"""
+    # store the range, calculate new values and assign them
+    range0 = max0 - min0
+    range1 = max1 - min1
+    data[patient][0] = ((data[patient][0] - min0) / range0) * 255
+    data[patient][1] = ((data[patient][1] - min1) / range1) * 255
+    # Verify that all pictures have values spaning from 0 to 255
+    if 1:
+        print("\n  patient:", patient)
+        print("old pre:  " + str(min0) + " to " + str(max0))
+        print("old post: " + str(min1) + " to " + str(max1))  
+        min0 = np.min(data[patient][0])
+        max0 = np.max(data[patient][0])
+        min1 = np.min(data[patient][1])
+        max1 = np.max(data[patient][1])
+        print("new pre:  " + str(int(min0)) + " to " + str(int(max0)))
+        print("new post: " + str(int(min1)) + " to " + str(int(max1)))"""
