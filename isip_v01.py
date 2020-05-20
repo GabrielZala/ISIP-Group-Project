@@ -72,3 +72,23 @@ for patient in patient_IDs:
   #   print("new pre:  " + str(int(min0)) + " to " + str(int(max0)))
   #   print("new post: " + str(int(min1)) + " to " + str(int(max1)))
 
+from utils import binarize_image
+#test_img = binarize_image(data["03"][0], 130, 180)
+
+
+### circle detection ###
+import cv2
+import numpy as np
+from utils import hough_circle
+img = data["04"][0]
+circles = hough_circle(img)
+cimg = cv2.cvtColor(img.astype("uint8"),cv2.COLOR_GRAY2BGR)   
+for i in circles[0,:]:
+    # draw the outer circle
+    cv2.circle(cimg,(i[0],i[1]),i[2],(0,255,0),2)
+    # draw the center of the circle
+    cv2.circle(cimg,(i[0],i[1]),2,(0,0,255),3)
+
+cv2.imshow('detected circles',cimg)
+cv2.waitKey(0)
+cv2.destroyAllWindows()
