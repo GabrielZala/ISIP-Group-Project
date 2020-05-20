@@ -22,7 +22,6 @@ def show(image_array):
     plt.show()
 
 
-
 def plot_image_list(list_images):
 
     # get how many images you want to plot horizontally
