@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-from skimage import feature , color
+from skimage import feature, color
 
 
 def edge_map(image, sigma):
@@ -20,7 +20,6 @@ def edge_map(image, sigma):
 def show(image_array):
     plt.imshow(image_array)
     plt.show()
-
 
 
 def plot_image_list(list_images):
