@@ -1,5 +1,5 @@
 from matplotlib import pyplot as plt
-from skimage import feature , color
+from skimage import feature, color
 
 
 def edge_map(image, sigma):
