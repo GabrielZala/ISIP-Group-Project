@@ -3,6 +3,7 @@ import tools.data_pickler_cuba as pickle
 import tools.image_utils_cuba as img
 import tools.methods_circle_detection_cudi as methods
 
+
 """ first we need to decide if we want to recompute our data with different parameters """
 
 recompute_data = False
@@ -26,6 +27,8 @@ else:
 """ in this chapter i transform the dictionary """
 
 # choose sigma for both pre and post images
+sigma_pre = 40
+sigma_post = 40
 
 if recompute_data:
     # create edge maps of images
@@ -36,9 +39,12 @@ else:
     dict_data_edges = pickle.load("dict_data_edges")
 
 """ here we attempt to find circles in our image, once with image and once with it's edge map """
+image = dict_data["03"][0]
+edges = dict_data_edges["03"][0]
 
 circles_image = methods.circles_find(image)
 circles_edges = methods.circles_find(edges)
 
 methods.circles_show(image, circles_image)
 methods.circles_show(image, circles_edges)
+
