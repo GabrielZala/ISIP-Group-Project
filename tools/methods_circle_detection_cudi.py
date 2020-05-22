@@ -22,14 +22,14 @@ def hough_circle(image):
     """
 
     # run circle detection algo
-    circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 1, 10, param1=50, param2=60, minRadius=0, maxRadius=0)
+    circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 1, 1, param1=61, param2=60, minRadius=0, maxRadius=0)
 
     """print(type(circles))  # just some data on what's found
     print(circles)
     print(np.shape(circles))"""
 
     circles = np.uint16(np.around(circles))  # what the fuck is this
-
+    print(circles)
     return circles
 
     # just to visualize the circles on the original image

@@ -26,8 +26,6 @@ else:
 """ in this chapter i transform the dictionary """
 
 # choose sigma for both pre and post images
-sigma_pre = 18
-sigma_post = 12
 
 if recompute_data:
     # create edge maps of images
@@ -38,8 +36,6 @@ else:
     dict_data_edges = pickle.load("dict_data_edges")
 
 """ here we attempt to find circles in our image, once with image and once with it's edge map """
-image = dict_data["04"][0]
-edges = dict_data_edges["04"][0]
 
 circles_image = methods.circles_find(image)
 circles_edges = methods.circles_find(edges)
