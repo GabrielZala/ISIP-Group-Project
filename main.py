@@ -1,23 +1,27 @@
 import tools.data_manager_sandro as data_manager
-import tools.data_pickler_cuba as pickle
+import pickle
 import tools.image_utils_cuba as img
 import tools.prototyping_cuba as prototyper
 import tools.methods_circle_detection_cudi as methods
 
 
-""" first we need to decide if we want to recompute our data with different parameters """
+""" first we need to decide if we want to recompute our data with different
+parameters """
 
 recompute_data = False
 
-""" in this chapter we handle the preprocessing of our images, loading, cropping and normalizing """
-reload_image_data = False
-if reload_image_data or recompute_data:
-    # load and crop and normalize our images into a dictionary {patient_label:[array_pre, array_post]}
-    dict_data = data_manager.preprocess_data()
-    pickle.save(dict_data, "dict_data")
-
+""" in this chapter we handle the preprocessing of our images, loading,
+cropping and normalizing """
+dict_data = None
+if recompute_data:
+    # load, crop and normalize our images and store them
+    # into a dictionary {patient_label:[array_pre, array_post]}
+    dict_data = data_manager.read_pictures()
+    with open("dict_data.bin", "wb") as bin_file:
+      pickle.dump(dict_data, bin_file)
 else:
-    dict_data = pickle.load("dict_data")
+    with open("dict_data.bin", "rb") as bin_file:
+      pickle.load(dict_data, bin_file)
 
 """ here i tried to estimate an appropriate sigma for our edge detection """
 

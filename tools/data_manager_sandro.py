@@ -1,11 +1,7 @@
 import numpy as np
 import glob
 from imageio import imread
-# import matplotlib.pyplot as plt
-# plt.rcParams['image.cmap'] = 'gray'
 
-
-# def preprocess_data():
 def read_pictures():
   
     # load the data in a dictionary where each key is the patients ID and the first
