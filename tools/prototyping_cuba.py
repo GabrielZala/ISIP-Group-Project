@@ -1,7 +1,7 @@
 import tools.image_utils_cuba as img
 
 
-def test_sigmas(data, testing_range=range(10, 15, 1), pre_or_post=0, patient="03"):
+def test_sigmas(data, testing_range=range(10, 15, 1), pre_or_post=0, patient="03"):  # WIP
 
     sample_image = data[patient][pre_or_post]
 
@@ -12,3 +12,4 @@ def test_sigmas(data, testing_range=range(10, 15, 1), pre_or_post=0, patient="03
         list_image_edge_maps.append(edge_map_current_sigma)
 
     img.plot_image_list(list_image_edge_maps)
+
