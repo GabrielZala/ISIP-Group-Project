@@ -26,7 +26,36 @@ def preprocess_data():
         post_img = np.array(imread("DATA/ID" + patient_ID + "/ID" + patient_ID + "post.png"))
         pre_img = np.array(imread("DATA/ID" + patient_ID + "/ID" + patient_ID + "pre.png"))
 
-        data[patient_ID] = [pre_img, post_img]  # add to dictionary
+        """ this deals with the inconsistencies in the dataset we got handed """
+        # now this is stupid, the png's have different data structures which lead some of them to use arrays instead
+        if type(pre_img[0, 0]) == type(pre_img):  # of uint8's to save pixel data, this finds them and corrects.
+
+            # create array that we use to overwrite our image later
+            nRows = np.shape(pre_img)[0]
+            nCols = np.shape(pre_img)[1]
+            array_temp = np.zeros(shape=(nRows, nCols))
+
+            for i_rows, row in enumerate(pre_img):
+                for i_cols, list_values in enumerate(row):
+                    array_temp[i_rows, i_cols] = list_values[0]  # just pick the 1st value of the list
+
+            pre_img = array_temp.astype("uint8")
+
+        # now this is stupid, the png's have different data structures which lead some of them to use arrays instead
+        if type(post_img[0, 0]) == type(post_img):  # of uint8's to save pixel data, this finds them and corrects.
+
+            # create array that we use to overwrite our image later
+            nRows = np.shape(post_img)[0]
+            nCols = np.shape(post_img)[1]
+            array_temp = np.zeros(shape=(nRows, nCols))
+
+            for i_rows, row in enumerate(post_img):
+                for i_cols, list_values in enumerate(row):
+                    array_temp[i_rows, i_cols] = list_values[0]  # just pick the 1st value of the list
+
+            post_img = array_temp.astype("uint8")
+
+        data[patient_ID] = [pre_img, post_img]  # add images to dictionary
 
     # Let the cropping begin
     for patient in patient_IDs:
@@ -43,7 +72,6 @@ def preprocess_data():
 
             # calculate new values
             data[patient][i] = ((data[patient][i] - min_val) / val_range) * 255
-
     return data
 
 
@@ -86,3 +114,11 @@ if 0:
         max1 = np.max(data[patient][1])
         print("new pre:  " + str(int(min0)) + " to " + str(int(max0)))
         print("new post: " + str(int(min1)) + " to " + str(int(max1)))"""
+
+
+def merge_dicts(dict_data, dict_data_edges):
+
+    dict_alld_data = {}
+    users = dict_data.keys()
+
+    return None
