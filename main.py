@@ -39,8 +39,8 @@ else:
     dict_data_edges = pickle.load("dict_data_edges")
 
 """ here we attempt to find circles in our image, once with image and once with it's edge map """
-image = dict_data["15"][0]
-edges = dict_data_edges["15"][0]
+image = dict_data["05"][0]
+edges = dict_data_edges["05"][0]
 
 #circles_image = methods.circles_find(image)
 circles_edges = methods.circles_find(edges)
