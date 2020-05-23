@@ -32,6 +32,7 @@ else:
 sigma_pre = 40
 sigma_post = 40
 
+recompute_image_edges = True
 if recompute_image_edges or recompute_data:
     # create edge maps of images
     dict_data_edges = img.data_to_edges(dict_data, sigma_pre, sigma_post)
