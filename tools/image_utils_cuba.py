@@ -1,5 +1,6 @@
 from matplotlib import pyplot as plt
 from skimage import feature, color
+import copy
 
 
 def edge_map(image, sigma):
@@ -23,7 +24,6 @@ def show(image_array):
 
 
 def plot_image_list(list_images):
-
     # get how many images you want to plot horizontally
     nCols = len(list_images)
     nRows = 1
@@ -37,7 +37,6 @@ def plot_image_list(list_images):
 
 
 def test_sigmas(data, testing_range=range(10, 15, 1), pre_or_post=0, patient="03"):
-
     sample_image = data[patient][pre_or_post]
 
     list_image_edge_maps = []
@@ -50,11 +49,9 @@ def test_sigmas(data, testing_range=range(10, 15, 1), pre_or_post=0, patient="03
 
 
 def data_to_edges(dict_data, sigma_pre, sigma_post):
-
     dict_data_edges = {}
 
     for patient in dict_data:
-
         # read images
         image_pre = dict_data[patient][0]
         image_post = dict_data[patient][1]
@@ -66,3 +63,40 @@ def data_to_edges(dict_data, sigma_pre, sigma_post):
         dict_data_edges[patient] = [edge_map_pre, edge_map_post]  # add to edge dictionary
 
     return dict_data_edges
+
+
+def create_material_masks(dict_data):
+
+    # set thresholds for bone/fluid/gas
+    t_bone = 150
+    t_gas = 40
+
+    for patient in dict_data:
+
+        image_pre = dict_data[patient][0]  # [600:640, 540:600]
+        image_post = dict_data[patient][1]
+
+        image_pre_bone = copy.copy(image_pre)
+        image_pre_fluid = copy.copy(image_pre)
+        image_pre_gas = copy.copy(image_pre)
+
+        for i_rows, row in enumerate(image_pre):
+            for i_cols, value in enumerate(row):
+                if value >= t_bone:
+                    image_pre_bone[i_rows, i_cols] = 1
+                    image_pre_fluid[i_rows, i_cols] = 0
+                    image_pre_gas[i_rows, i_cols] = 0
+
+                elif value <= t_gas:
+                    image_pre_bone[i_rows, i_cols] = 0
+                    image_pre_fluid[i_rows, i_cols] = 0
+                    image_pre_gas[i_rows, i_cols] = 1
+
+                else:
+                    image_pre_bone[i_rows, i_cols] = 0
+                    image_pre_fluid[i_rows, i_cols] = 1
+                    image_pre_gas[i_rows, i_cols] = 0
+
+        plot_image_list([image_pre_bone,image_pre_fluid,image_pre_gas])
+
+    return None
