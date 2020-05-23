@@ -26,7 +26,7 @@ def preprocess_data():
         post_img = np.array(imread("DATA/ID" + patient_ID + "/ID" + patient_ID + "post.png"))
         pre_img = np.array(imread("DATA/ID" + patient_ID + "/ID" + patient_ID + "pre.png"))
 
-        """ this deals with the inconsistencies in the dataset we got handed """
+        """ this deals with inconsistencies in the dataset """
         # now this is stupid, the png's have different data structures which lead some of them to use arrays instead
         if type(pre_img[0, 0]) == type(pre_img):  # of uint8's to save pixel data, this finds them and corrects.
 
@@ -35,11 +35,12 @@ def preprocess_data():
             nCols = np.shape(pre_img)[1]
             array_temp = np.zeros(shape=(nRows, nCols))
 
+            # pick only the 1st value from the list [value, value, value, 255]
             for i_rows, row in enumerate(pre_img):
                 for i_cols, list_values in enumerate(row):
                     array_temp[i_rows, i_cols] = list_values[0]  # just pick the 1st value of the list
 
-            pre_img = array_temp.astype("uint8")
+            pre_img = array_temp.astype("uint8") # so it retains the same datatype as other arrays in the dict
 
         # now this is stupid, the png's have different data structures which lead some of them to use arrays instead
         if type(post_img[0, 0]) == type(post_img):  # of uint8's to save pixel data, this finds them and corrects.
@@ -49,11 +50,12 @@ def preprocess_data():
             nCols = np.shape(post_img)[1]
             array_temp = np.zeros(shape=(nRows, nCols))
 
+            # pick only the 1st value from the list [value, value, value, 255]
             for i_rows, row in enumerate(post_img):
                 for i_cols, list_values in enumerate(row):
                     array_temp[i_rows, i_cols] = list_values[0]  # just pick the 1st value of the list
 
-            post_img = array_temp.astype("uint8")
+            post_img = array_temp.astype("uint8")  # so it retains the same datatype as other arrays in the dict
 
         data[patient_ID] = [pre_img, post_img]  # add images to dictionary
 
