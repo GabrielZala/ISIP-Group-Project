@@ -55,9 +55,14 @@ edges = dict_data_edges["15"][0]
 #circles_image = methods.circles_find(image)
 circles_edges = methods.circles_find(edges)
 
+<<<<<<< HEAD
 #spiral_center_image = methods.get_center(circles_image)
 spiral_center_edges = methods.get_center(circles_edges)
 
 #methods.circles_show(image, spiral_center_image)
 methods.circles_show(image, spiral_center_edges)
 
+=======
+# methods.circles_show(image, circles_image)
+# methods.circles_show(image, circles_edges)
+>>>>>>> cuba
