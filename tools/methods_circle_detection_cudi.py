@@ -58,8 +58,7 @@ def circles_find(image):
                 if image[i, j] == 1:
                     image[i, j] = 255
                 else:
-                    image[i, j] = 1
-
+                    image[i, j] = 0
     else:
         image = image.astype("uint8")  # also, not all numeric arrays are supported, so convert just in case
         image = cv2.medianBlur(image, 5)  # add some blur to reduce noise
