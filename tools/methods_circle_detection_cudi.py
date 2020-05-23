@@ -22,7 +22,7 @@ def hough_circle(image):
     """
 
     # run circle detection algo
-    circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 1, 1, param1=61, param2=60, minRadius=0, maxRadius=0)
+    circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 1, 2, param1=50, param2=50, minRadius=0, maxRadius=0)
 
     """print(type(circles))  # just some data on what's found
     print(circles)
@@ -82,3 +82,11 @@ def circles_show(image, circles):
     cv2.imshow('detected circles', cimg)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
+
+def get_center(array_of_center_coords):
+    #need to find a way to remove outliers...
+    center_coords = array_of_center_coords.reshape((len(array_of_center_coords[0]),len(array_of_center_coords[0][0])))
+    center_x = int(np.sum(center_coords[:,0])/len(center_coords[:,0]))
+    center_y = int(np.sum(center_coords[:,1])/len(center_coords[:,1]))
+    spiral_center = np.array([[[center_x,center_y,10]]])
+    return spiral_center

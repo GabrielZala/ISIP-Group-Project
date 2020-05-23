@@ -6,7 +6,7 @@ ToDo:
 2. detect the center of the spiral (what exactly is the spiral? (is it the one leading us into depression?))
 3. detect each electrode contact
   - they are equally spaced (prediction of invisible contacts is thus possible)
-  - innermost is contact 1, outermost contact 12
+  - innermost is contact 1, outermost contact 12 (euclidean distance from center to each electrode to get their indexes?)
 4. compute angular insertion depth (in degrees)
 
 
