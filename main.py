@@ -36,14 +36,17 @@ else:
 sigma_pre = 40
 sigma_post = 40
 
+dict_data_edges = None
 recompute_image_edges = True
 if recompute_image_edges or recompute_data:
-    # create edge maps of images
-    dict_data_edges = img.data_to_edges(dict_data, sigma_pre, sigma_post)
-    pickle.save(dict_data_edges, "dict_data_edges")
+  # create edge maps of images
+  dict_data_edges = img.data_to_edges(dict_data, sigma_pre, sigma_post)
+  with open("dict_data_edges.bin", "wb") as bin_file:
+    pickle.dump(dict_data_edges, bin_file)
 
 else:
-    dict_data_edges = pickle.load("dict_data_edges")
+  with open("dict_data_edges.bin", "rb") as bin_file:
+      pickle.load(dict_data_edges, bin_file)
 
 # now merge the image and edge dictionaries WIP
 platzhalter = data_manager.merge_dicts(dict_data, dict_data_edges)
