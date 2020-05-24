@@ -3,6 +3,7 @@ import pickle
 import tools.image_utils_cuba as img
 import tools.prototyping_cuba as prototyper
 import tools.methods_circle_detection_cudi as methods
+from matplotlib import pyplot as plt
 
 
 """ first we need to decide if we want to recompute our data with different
@@ -58,6 +59,8 @@ else:
 """ here we attempt to find circles in our image, once with image and once with it's edge map """
 image = dict_data["05"][0]
 edges = dict_data_edges["05"][0]
+
+dict_data_cropped = methods.crop_images(dict_data, y0=150, y1=550)
 
 # #circles_image = methods.circles_find(image)
 # circles_edges = methods.circles_find(edges)

@@ -89,3 +89,13 @@ def get_center(array_of_center_coords):
     center_y = int(np.sum(center_coords[:,1])/len(center_coords[:,1]))
     spiral_center = np.array([[[center_x,center_y,10]]])
     return spiral_center
+
+def crop_images(dictionary,y0=0,y1=723,x0=0,x1=1129):
+
+    for i in dictionary:
+        for j in range(2):
+            image = dictionary[i][j]
+            image = image[y0:y1,x0:x1]
+            dictionary[i][j] = image
+    return dictionary
+            
