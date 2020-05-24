@@ -8,7 +8,7 @@ import tools.methods_circle_detection_cudi as methods
 """ first we need to decide if we want to recompute our data with different
 parameters """
 
-recompute_data = False
+recompute_data = True
 
 """ in this chapter we handle the preprocessing of our images, loading,
 cropping and normalizing """
@@ -21,7 +21,7 @@ if recompute_data:
       pickle.dump(dict_data, bin_file)
 else:
     with open("dict_data.bin", "rb") as bin_file:
-      pickle.load(dict_data, bin_file)
+      dict_data = pickle.load(bin_file)
 
 """ here i tried to estimate an appropriate sigma for our edge detection """
 
@@ -46,24 +46,24 @@ if recompute_image_edges or recompute_data:
 
 else:
   with open("dict_data_edges.bin", "rb") as bin_file:
-      pickle.load(dict_data_edges, bin_file)
+      dict_data_edges = pickle.load(bin_file)
 
 # now merge the image and edge dictionaries WIP
-platzhalter = data_manager.merge_dicts(dict_data, dict_data_edges)
+#platzhalter = data_manager.merge_dicts(dict_data, dict_data_edges)
 
 """ new concept for edges - split images into bone air fluid channels """
 
-img.create_material_masks(dict_data)
+#img.create_material_masks(dict_data)
 
 """ here we attempt to find circles in our image, once with image and once with it's edge map """
 image = dict_data["05"][0]
 edges = dict_data_edges["05"][0]
 
-#circles_image = methods.circles_find(image)
-circles_edges = methods.circles_find(edges)
+# #circles_image = methods.circles_find(image)
+# circles_edges = methods.circles_find(edges)
 
-#spiral_center_image = methods.get_center(circles_image)
-spiral_center_edges = methods.get_center(circles_edges)
+# #spiral_center_image = methods.get_center(circles_image)
+# spiral_center_edges = methods.get_center(circles_edges)
 
-#methods.circles_show(image, spiral_center_image)
-methods.circles_show(image, spiral_center_edges)
+# #methods.circles_show(image, spiral_center_image)
+# methods.circles_show(image, spiral_center_edges)
