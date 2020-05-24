@@ -70,7 +70,7 @@ if Hough_circle_detection:
         except:
             pass
 
-
+    for i in 
 # spiral_center_image = methods.get_center(circles_image)
 # spiral_center_edges = methods.get_center(circles_edges)
     
