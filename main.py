@@ -57,16 +57,22 @@ else:
 #img.create_material_masks(dict_data)
 
 """ here we attempt to find circles in our image, once with image and once with it's edge map """
-image = dict_data["05"][0]
-edges = dict_data_edges["05"][0]
+Hough_circle_detection = True
 
-dict_data_cropped = methods.crop_images(dict_data, y0=150, y1=550)
+if Hough_circle_detection:
+    #dict_data_cropped = methods.crop_images(dict_data, y0=150, y1=550, x0=600,x1=800)
+    dict_of_centres = {}
+    for i in dict_data:
+        image = dict_data[i][0]
+        try:    
+            circles_image = methods.circles_find(image)
+            dict_of_centres[i] = circles_image
+        except:
+            pass
 
-# #circles_image = methods.circles_find(image)
-# circles_edges = methods.circles_find(edges)
 
-# #spiral_center_image = methods.get_center(circles_image)
+# spiral_center_image = methods.get_center(circles_image)
 # spiral_center_edges = methods.get_center(circles_edges)
-
-# #methods.circles_show(image, spiral_center_image)
+    
+# methods.circles_show(image, spiral_center_image)
 # methods.circles_show(image, spiral_center_edges)

@@ -23,27 +23,12 @@ def hough_circle(image):
 
     # run circle detection algo
     circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 1, 2, param1=50, param2=50, minRadius=0, maxRadius=0)
-
     """print(type(circles))  # just some data on what's found
     print(circles)
     print(np.shape(circles))"""
 
     circles = np.uint16(np.around(circles))  # what the fuck is this
-    print(circles)
     return circles
-
-    # just to visualize the circles on the original image
-    # cimg = cv2.cvtColor(img,cv2.COLOR_GRAY2BGR)
-    # for i in circles[0,:]:
-    #     # draw the outer circle
-    #     cv2.circle(cimg,(i[0],i[1]),i[2],(0,255,0),2)
-    #     # draw the center of the circle
-    #     cv2.circle(cimg,(i[0],i[1]),2,(0,0,255),3)
-
-    # cv2.imshow('detected circles',cimg)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
 
 def circles_find(image):
 
@@ -90,12 +75,14 @@ def get_center(array_of_center_coords):
     spiral_center = np.array([[[center_x,center_y,10]]])
     return spiral_center
 
-def crop_images(dictionary,y0=0,y1=723,x0=0,x1=1129):
-
+def crop_images(input_dict,y0=0,y1=723,x0=0,x1=1129):
+    dictionary = input_dict
     for i in dictionary:
         for j in range(2):
             image = dictionary[i][j]
             image = image[y0:y1,x0:x1]
             dictionary[i][j] = image
     return dictionary
+
+
             
