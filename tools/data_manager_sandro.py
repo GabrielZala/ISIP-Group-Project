@@ -1,13 +1,9 @@
 import numpy as np
 import glob
 from imageio import imread
-import matplotlib.pyplot as plt
 
-
-def preprocess_data():
-
-    plt.rcParams['image.cmap'] = 'gray'
-
+def read_pictures():
+  
     # load the data in a dictionary where each key is the patients ID and the first
     # image is the pre_img and the second image is the post_img
     image_path = glob.glob("./DATA/ID*/ID*.png")
@@ -16,50 +12,25 @@ def preprocess_data():
     patient_IDs = []  # this list is used for indexing during the crop
 
     for i, image in enumerate(image_path):
-
-        patient_ID = image[9:11]  # gets the patient id string
-
-        if patient_ID not in patient_IDs:
-            patient_IDs.append(patient_ID)  # build list of patient ID's
-
-        # read pictures into arrays
-        post_img = np.array(imread("DATA/ID" + patient_ID + "/ID" + patient_ID + "post.png"))
-        pre_img = np.array(imread("DATA/ID" + patient_ID + "/ID" + patient_ID + "pre.png"))
-
-        """ this deals with inconsistencies in the dataset """
-        # now this is stupid, the png's have different data structures which lead some of them to use arrays instead
-        if type(pre_img[0, 0]) == type(pre_img):  # of uint8's to save pixel data, this finds them and corrects.
-
-            # create array that we use to overwrite our image later
-            nRows = np.shape(pre_img)[0]
-            nCols = np.shape(pre_img)[1]
-            array_temp = np.zeros(shape=(nRows, nCols))
-
-            # pick only the 1st value from the list [value, value, value, 255]
-            for i_rows, row in enumerate(pre_img):
-                for i_cols, list_values in enumerate(row):
-                    array_temp[i_rows, i_cols] = list_values[0]  # just pick the 1st value of the list
-
-            pre_img = array_temp.astype("uint8") # so it retains the same datatype as other arrays in the dict
-
-        # now this is stupid, the png's have different data structures which lead some of them to use arrays instead
-        if type(post_img[0, 0]) == type(post_img):  # of uint8's to save pixel data, this finds them and corrects.
-
-            # create array that we use to overwrite our image later
-            nRows = np.shape(post_img)[0]
-            nCols = np.shape(post_img)[1]
-            array_temp = np.zeros(shape=(nRows, nCols))
-
-            # pick only the 1st value from the list [value, value, value, 255]
-            for i_rows, row in enumerate(post_img):
-                for i_cols, list_values in enumerate(row):
-                    array_temp[i_rows, i_cols] = list_values[0]  # just pick the 1st value of the list
-
-            post_img = array_temp.astype("uint8")  # so it retains the same datatype as other arrays in the dict
-
-        data[patient_ID] = [pre_img, post_img]  # add images to dictionary
-
-    # Let the cropping begin
+      patient_ID = image[9:11]
+      # build list of patient ID's
+      if patient_ID not in patient_IDs:
+        patient_IDs.append(patient_ID)
+    
+      # read pictures into arrays
+      post_img = np.array(imread("DATA/ID"+patient_ID+"/ID"+patient_ID+"post.png"))
+      pre_img = np.array(imread("DATA/ID"+patient_ID+"/ID"+patient_ID+"pre.png"))
+      
+      # Some pictures are somehow 3 dimensional. We just take the first 2D picture.
+      if pre_img.ndim == 3:
+        pre_img = pre_img[:,:,0].astype("uint8")
+      if post_img.ndim == 3:
+        post_img = post_img[:,:,0].astype("uint8")
+      
+      data[patient_ID] = [pre_img, post_img]  # add images to dictionary
+    
+    
+    # Crop images and normalize intensities
     for patient in patient_IDs:
         for i in range(len(data[patient])):  # i = [0, 1] -> pre_img, post_img
 
@@ -74,53 +45,5 @@ def preprocess_data():
 
             # calculate new values
             data[patient][i] = ((data[patient][i] - min_val) / val_range) * 255
+    
     return data
-
-
-"""# I found that the watermark always goes exactly down to the 23th pixel
-# with the following code:
-if 0:
-  for patient in patient_IDs:  
-    plt.imshow(data[patient][0][0:24, 0:50])
-    plt.show()
-    plt.imshow(data[patient][0][0:24, -50:-1])
-    plt.show()
-    plt.imshow(data[patient][1][0:24, 0:50])
-    plt.show()
-    plt.imshow(data[patient][1][0:24, -50:-1])
-    plt.show()"""
-
-"""Old style (pre and post individually):
-    # Crop away the first 23 pixelrows of every picture
-    data[patient][0] = data[patient][0][23:, :]
-    data[patient][1] = data[patient][1][23:, :]
-    ### normalize each individual pic to hold values from 0 to 255
-    # get the min and max values
-    min0 = np.min(data[patient][0])
-    max0 = np.max(data[patient][0])
-    min1 = np.min(data[patient][1])
-    max1 = np.max(data[patient][1])
-    # store the range, calculate new values and assign them
-    range0 = max0 - min0
-    range1 = max1 - min1
-    data[patient][0] = ((data[patient][0] - min0) / range0) * 255
-    data[patient][1] = ((data[patient][1] - min1) / range1) * 255
-    # Verify that all pictures have values spaning from 0 to 255
-    if 1:
-        print("\n  patient:", patient)
-        print("old pre:  " + str(min0) + " to " + str(max0))
-        print("old post: " + str(min1) + " to " + str(max1))  
-        min0 = np.min(data[patient][0])
-        max0 = np.max(data[patient][0])
-        min1 = np.min(data[patient][1])
-        max1 = np.max(data[patient][1])
-        print("new pre:  " + str(int(min0)) + " to " + str(int(max0)))
-        print("new post: " + str(int(min1)) + " to " + str(int(max1)))"""
-
-
-def merge_dicts(dict_data, dict_data_edges):
-
-    dict_alld_data = {}
-    users = dict_data.keys()
-
-    return None
