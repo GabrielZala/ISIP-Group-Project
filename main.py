@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 """ first we need to decide if we want to recompute our data with different
 parameters """
 
-recompute_data = True
+recompute_data = False
 
 """ in this chapter we handle the preprocessing of our images, loading,
 cropping and normalizing """
@@ -38,7 +38,7 @@ sigma_pre = 40
 sigma_post = 40
 
 dict_data_edges = None
-recompute_image_edges = True
+recompute_image_edges = False
 if recompute_image_edges or recompute_data:
   # create edge maps of images
   dict_data_edges = img.data_to_edges(dict_data, sigma_pre, sigma_post)
@@ -63,16 +63,16 @@ if Hough_circle_detection:
     #dict_data_cropped = methods.crop_images(dict_data, y0=150, y1=550, x0=600,x1=800)
     dict_of_centres = {}
     for i in dict_data:
-        image = dict_data[i][0]
+        print(i)
+        image = dict_data[i][1]
         try:    
             circles_image = methods.circles_find(image)
             dict_of_centres[i] = circles_image
+            print(i,"in try", "number of circles found:",len(circles_image[0]))
         except:
+            print(i,"returned None, ergo no circles found")
             pass
+        
 
-    for i in 
-# spiral_center_image = methods.get_center(circles_image)
-# spiral_center_edges = methods.get_center(circles_edges)
-    
-# methods.circles_show(image, spiral_center_image)
-# methods.circles_show(image, spiral_center_edges)
+    for i in dict_of_centres: #use arrowkeys to go through the images
+        methods.circles_show(dict_data[i][1],dict_of_centres[i])
