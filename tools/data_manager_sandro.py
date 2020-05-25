@@ -2,6 +2,19 @@ import numpy as np
 import glob
 from imageio import imread
 
+def image_histogram_equalization(image, number_bins=256):
+    # from http://www.janeriksolem.net/2009/06/histogram-equalization-with-python-and.html
+
+    # get image histogram
+    image_histogram, bins = np.histogram(image.flatten(), number_bins, density=True)
+    cdf = image_histogram.cumsum() # cumulative distribution function
+    cdf = 255 * cdf / cdf[-1] # normalize
+
+    # use linear interpolation of cdf to find new pixel values
+    image_equalized = np.interp(image.flatten(), bins[:-1], cdf)
+
+    return image_equalized.reshape(image.shape)
+
 def read_pictures():
   
     # load the data in a dictionary where each key is the patients ID and the first
@@ -39,11 +52,13 @@ def read_pictures():
 
             # normalize each individual pic to again hold values from 0 to 255
             # get the min and max values and the resulting range
-            min_val = np.min(data[patient][i])
-            max_val = np.max(data[patient][i])
-            val_range = max_val - min_val
-
+            #min_val = np.min(data[patient][i])
+            #max_val = np.max(data[patient][i])
+            #val_range = max_val - min_val
             # calculate new values
-            data[patient][i] = ((data[patient][i] - min_val) / val_range) * 255
+            #data[patient][i] = ((data[patient][i] - min_val) / val_range) * 255
+            
+            #apply histogram equalization instead of the normalization above:
+            data[patient][i] = image_histogram_equalization(data[patient][i])
     
     return data
