@@ -27,7 +27,7 @@ def run_kmean_on_single_image(image_array, k):
 
     res = center[label.flatten()]  # label is actually already flat, but do it anyways for consistency
     res2 = res.reshape(image_array.shape)
-
+    
     return res2
 
 
