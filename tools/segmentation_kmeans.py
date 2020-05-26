@@ -11,7 +11,8 @@ def run_kmean_on_single_image(image_array, k, precision=10, max_iterations=1):
     image_array = cv2.medianBlur(image_array, 5)
 
     # make the image flat
-    image_flattened = image_array.reshape((-1, 3))
+    image_flattened = image_array.flatten()
+    # image_flattened = image_array.reshape((-1, 3))
 
     # convert to np.float32
     image_flat_converted = np.float32(image_flattened)
@@ -41,7 +42,7 @@ def segment_img_data(dict_data, k_pre=3, k_post=3):
 
         segmented_images_current_patient = []
 
-        for i in range(2):
+        for i in range(2):  # for pre and post image, hence indices [0, 1]
 
             # get pre image & K-parameter
             image = dict_data[patient][i]
