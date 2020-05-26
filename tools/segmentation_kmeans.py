@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 
 
-def run_kmean_on_single_image(image_array, k):
+def run_kmean_on_single_image(image_array, k, precision=10, max_iterations=1):
 
     image_array = np.uint8(image_array)
 
@@ -17,10 +17,10 @@ def run_kmean_on_single_image(image_array, k):
     image_flat_converted = np.float32(image_flattened)
 
     # define criteria, number of clusters(K) and apply kmeans()
-    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1)
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, precision, max_iterations)
 
     # run k-means clustering
-    ret, label, center = cv2.kmeans(image_flat_converted, k, None, criteria, 10, cv2.KMEANS_RANDOM_CENTERS)
+    ret, label, center = cv2.kmeans(image_flat_converted, k, None, criteria, 10, cv2.KMEANS_PP_CENTERS)
 
     # Now convert back into uint8, and make original image
     center = np.uint8(center)

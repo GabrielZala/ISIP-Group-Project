@@ -1,4 +1,4 @@
-import tools.image_utils_cuba as img
+import tools.image_utils as img
 
 
 def test_sigmas(data, testing_range=range(10, 15, 1), pre_or_post=0, patient="03"):  # WIP
