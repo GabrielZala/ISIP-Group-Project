@@ -1,5 +1,4 @@
 import cv2
-
 import tools.data_manager as data_manager
 import pickle
 import tools.image_utils as img
@@ -43,7 +42,7 @@ else:
         dict_data_edges = pickle.load(bin_file)
 
 """ Create a segmented image """
-recompute_segmented_images = False
+recompute_segmented_images = True
 if recompute_segmented_images or recompute_data:
     # create segmented images using K-means clustering
     print("recompute Segmented images")
@@ -59,15 +58,19 @@ else:
     img.plot_image_list(dict_data_segmented[patient])"""
 
 """ here we attempt to find circles in our image, once with image and once with it's edge map """
-hough_circle_detection = False
+#dict_data_cropped = methods.crop_images(dict_data_segmented, y0=100, y1=600, x0=150,x1=900)
+hough_circle_detection = True
 if hough_circle_detection or recompute_data:
-    # dict_data_cropped = methods.crop_images(dict_data, y0=150, y1=550, x0=600,x1=800)
     dict_of_centres = {}
-    for patient in dict_data:
-        print(patient)
-        image = dict_data[patient][1]
+    
+    for patient in dict_data_segmented:
+        
+        image = dict_data_segmented[patient][0].astype("uint8")
+        #image = cv2.medianBlur(image, 11)
         try:
-            circles_image = methods.circles_find(image)
+            circles_image = circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 3, 10000, 
+                                                       param1=50, param2=30, minRadius=100, 
+                                                       maxRadius=200)
             dict_of_centres[patient] = circles_image
             print(patient, "in try", "number of circles found:", len(circles_image[0]))
         except:
@@ -75,14 +78,14 @@ if hough_circle_detection or recompute_data:
             pass
 
     for i in dict_of_centres:  # use arrowkeys to go through the images
-        methods.circles_show(dict_data[i][1], dict_of_centres[i])
+        methods.circles_show(dict_data_segmented[i][0], dict_of_centres[i])
 
 """ this approach trys to find the electrodes using their intensities and contours.
 maybe we could implement how far the points should be a part maximal and minimal to 
 get rid of the wrong center points. some pictures would benefit from an image
 erosion such as img 5. but i dont know how to choose these images beforehand"""
-find_centers = True
-if find_centers or recompute_data:
+find_electrodes = True
+if find_electrodes or recompute_data:
     result_dict = {}
     from scipy import ndimage as ndi
 
@@ -116,12 +119,13 @@ if find_centers or recompute_data:
         # binarize image
         image_binary = methods.binarize_image(image_segmented, lower_threshold=lower_threshold, upper_threshold=255)
         list_all_preprocessed.append(image_binary)  # add to a list to plot it later
-
+        # apply watershed
+        image_watershed = cv2.watershed(image_blurred, image_binary)
         # now find the contours to calculate their centres
-        image_binary = cv2.convertScaleAbs(image_binary)  # need to convert to special format...
+        image_watershed = cv2.convertScaleAbs(image_watershed)  # need to convert to special format...
 
         # actually find contours
-        contours, hierarchy = cv2.findContours(image_binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        im2, contours, hierarchy = cv2.findContours(image_watershed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         # calculating the centres of each contour
         lst_of_centres = []
@@ -147,3 +151,51 @@ if find_centers or recompute_data:
 for i in result_dict:
     plt.imshow(result_dict[i][0])
     plt.show()
+    
+    
+#####################
+# https://stackoverflow.com/questions/11294859/how-to-define-the-markers-for-watershed-in-opencv
+import sys
+import cv2
+import numpy
+from scipy.ndimage import label
+
+def segment_on_dt(a, img):
+    border = cv2.dilate(img, None, iterations=5)
+    border = border - cv2.erode(border, None)
+
+    dt = cv2.distanceTransform(img, 2, 3)
+    dt = ((dt - dt.min()) / (dt.max() - dt.min()) * 255).astype(numpy.uint8)
+    _, dt = cv2.threshold(dt, 140, 255, cv2.THRESH_BINARY)
+    lbl, ncc = label(dt)
+    print(dt)
+    lbl = lbl * (255 / (ncc + 1))
+    # Completing the markers now. 
+    lbl[border == 255] = 255
+    
+    lbl = lbl.astype(numpy.int32)
+    print(lbl)
+    cv2.watershed(a, lbl)
+
+    lbl[lbl == -1] = 0
+    lbl = lbl.astype(numpy.uint8)
+    return 255 - lbl
+
+img = cv2.imread("/Users/conra/Desktop/ISIP-Group-Project/DATA/ID03/ID03post.png")
+
+# Pre-processing
+img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)    
+img_gray = cv2.GaussianBlur(img_gray, (9,9), 1)
+_, img_bin = cv2.threshold(img_gray, 0, 255,
+        cv2.THRESH_OTSU)
+img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN,
+        numpy.ones((3, 3), dtype=int))
+
+
+result = segment_on_dt(img, img_bin)
+result[result != 255] = 0
+result = cv2.dilate(result, None)
+img[result == 255] = (0, 0, 255)
+cv2.imshow('Example - Show image in window',img)
+cv2.waitKey(0) # waits until a key is pressed
+cv2.destroyAllWindows()

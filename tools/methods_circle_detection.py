@@ -22,36 +22,13 @@ def hough_circle(image):
     """
 
     # run circle detection algo
-    circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 1, 15, param1=30, param2=40, minRadius=0, maxRadius=50)
+    circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 2, 0, param1=30, param2=100, minRadius=100, maxRadius=200)
     """print(type(circles))  # just some data on what's found
     print(circles)
     print(np.shape(circles))"""
 
     circles = np.uint16(np.around(circles))  # what the fuck is this
     return circles
-
-def circles_find(image):
-
-    if image.dtype == bool:  # edge maps are boolean and need to be converted first for the cv2 module
-        image = image.astype("uint8")  # convert boolean to array with range [0, 1]
-
-        # this is not enough tho, we need range [1, 255] so we loop over the whole thing and change the values
-        nRows = np.shape(image)[0]
-        nCols = np.shape(image)[1]
-        for i in range(nRows):
-            for j in range(nCols):
-                if image[i, j] == 1:
-                    image[i, j] = 255
-                else:
-                    image[i, j] = 0
-    else:
-        image = image.astype("uint8")  # also, not all numeric arrays are supported, so convert just in case
-        image = cv2.medianBlur(image, 5)  # add some blur to reduce noise
-
-    circles = hough_circle(image)
-
-    return circles
-
 
 def circles_show(image, circles):
 

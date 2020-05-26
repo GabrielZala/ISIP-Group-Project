@@ -3,12 +3,12 @@ import numpy as np
 import cv2
 
 
-def run_kmean_on_single_image(image_array, k, precision=10, max_iterations=1):
+def run_kmean_on_single_image(image_array, k, precision=10, max_iterations=0.1):
 
     image_array = np.uint8(image_array)
 
     # blur image beforehand
-    image_array = cv2.medianBlur(image_array, 5)
+    image_array = cv2.medianBlur(image_array, 11)
 
     # make the image flat
     image_flattened = image_array.reshape((-1, 3))

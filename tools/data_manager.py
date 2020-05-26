@@ -1,7 +1,7 @@
 import numpy as np
 import glob
 from imageio import imread
-
+from tools.image_utils import equalize_histogram
 
 def read_pictures():
   
@@ -40,13 +40,13 @@ def read_pictures():
 
             # normalize each individual pic to again hold values from 0 to 255
             # get the min and max values and the resulting range
-            #min_val = np.min(data[patient][i])
-            #max_val = np.max(data[patient][i])
-            #val_range = max_val - min_val
+            min_val = np.min(data[patient][i])
+            max_val = np.max(data[patient][i])
+            val_range = max_val - min_val
             # calculate new values
-            #data[patient][i] = ((data[patient][i] - min_val) / val_range) * 255
+            data[patient][i] = ((data[patient][i] - min_val) / val_range) * 255
             
             #apply histogram equalization instead of the normalization above:
-            data[patient][i] = image_histogram_equalization(data[patient][i])
+            #data[patient][i] = equalize_histogram(data[patient][i])
     
     return data
