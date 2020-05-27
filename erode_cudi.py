@@ -6,11 +6,11 @@ import tools.segmentation_kmeans as segmentator
 import tools.methods_circle_detection as methods
 import numpy as np
 from scipy import ndimage as ndi
-from skimage.segmentation import watershed
-from skimage.feature import peak_local_max
+
+
 import matplotlib.pyplot as plt
-## cudi's sandbox
-reload_images = False
+
+reload_images = True
 if reload_images:
     # load, crop and normalize our images and store them
     # into a dictionary {patient_label:[array_pre, array_post]}
