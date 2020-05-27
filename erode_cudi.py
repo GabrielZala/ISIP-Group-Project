@@ -87,6 +87,7 @@ def area_of_each_contour(contours):
         black_img = cv2.fillPoly(black_img, pts =[i], color = (255)).astype("uint8")
         single_contour = find_contours(black_img)
         area = area_of_contour(single_contour)
+        print(area)
         super_lst.append([area,black_img])
         contour_counter += 1
     return super_lst
@@ -119,38 +120,37 @@ def erode_until_split(image_of_largest_area_in_contour_dict):
 def individual_erosion(binary_image,numberOfIterations):
     
     contours_lst = find_contours(binary_image)
-    
-    super_lst = area_of_each_contour(contours_lst)
+    lst =[]
+    lst = area_of_each_contour(contours_lst)
     for i in range(numberOfIterations):
-        super_lst =sorted(super_lst, key=lambda x: x[0],reverse=True)
-        largest_area = super_lst[0]
-        #remove the largest contour from super_lst as it gets split
-        del super_lst[0]
-        another_lst = erode_until_split(largest_area[1])
-    
-        #merge another_lst into super_lst
-        index = 0
-        for j in another_lst:
-            if j[0]==0:
-                del another_lst[index]
-            else:
-                super_lst.append(j)
-            index += 1
+        lst =sorted(lst, key=lambda x: x[0],reverse=True)
+        largest_area = lst[0]
+        if largest_area[0]<2500:
+            pass
+        else:
+            #remove the largest contour from super_lst as it gets split
+            del lst[0]
+            another_lst = erode_until_split(largest_area[1])
         
+            #merge another_lst into super_lst
+            index = 0
+            for j in another_lst:
+                if j[0]==0:
+                    del another_lst[index]
+                else:
+                    lst.append(j)
+                index += 1
+            
     final_map = np.zeros((723,1129))
-    for i in range(len(super_lst)):
-        final_map += super_lst[i][1]
+    for i in range(len(lst)):
+        final_map += lst[i][1]
         
     return final_map
 
-image = lst_cropped_binary[1]
-plt.imshow(lst_cropped_binary[1])
 
-result = individual_erosion(image, 7)
-plt.imshow(result)
-print(result)
-
-
+for i in lst_cropped_binary:
+    plt.imshow(individual_erosion(i, 1))
+    plt.show()
 
 
 
