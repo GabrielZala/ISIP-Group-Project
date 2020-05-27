@@ -11,7 +11,7 @@ import scipy.misc
 """ first we need to decide if we want to recompute our data with different
 parameters """
 
-recompute_data = False
+recompute_data = True
 
 """ in this chapter we handle the preprocessing of our images, loading,
 cropping and normalizing """
@@ -60,7 +60,7 @@ else:
 
 """ here we attempt to find circles in our image, once with image and once with it's edge map """
 #dict_data_cropped = methods.crop_images(dict_data_segmented, y0=100, y1=600, x0=150,x1=900)
-hough_circle_detection = False
+hough_circle_detection = True
 if hough_circle_detection or recompute_data:
     dict_of_centres = {}
     
@@ -69,7 +69,7 @@ if hough_circle_detection or recompute_data:
         image = dict_data_segmented[patient][0].astype("uint8")
         #image = cv2.medianBlur(image, 11)
         try:
-            circles_image = circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 3, 10000, 
+            circles_image = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 3, 10000, 
                                                        param1=50, param2=30, minRadius=100, 
                                                        maxRadius=200)
             dict_of_centres[patient] = circles_image
