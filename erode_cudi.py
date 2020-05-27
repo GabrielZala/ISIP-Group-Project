@@ -67,9 +67,6 @@ for i in list_all_preprocessed_binaries:
         plt.imshow(new_binary)
         plt.show()
 
-for i in lst_cropped_binary:
-    plt.imshow(i)
-    plt.show()
 ###################################################################
 def area_of_contour(binary_image):
     area = cv2.contourArea(binary_image[0])
@@ -87,7 +84,6 @@ def area_of_each_contour(contours):
         black_img = cv2.fillPoly(black_img, pts =[i], color = (255)).astype("uint8")
         single_contour = find_contours(black_img)
         area = area_of_contour(single_contour)
-        print(area)
         super_lst.append([area,black_img])
         contour_counter += 1
     return super_lst
@@ -117,50 +113,39 @@ def erode_until_split(image_of_largest_area_in_contour_dict):
     return another_lst
 
 
-def individual_erosion(binary_image,numberOfIterations):
+def individual_erosion(binary_image):
     
     contours_lst = find_contours(binary_image)
     lst =[]
     lst = area_of_each_contour(contours_lst)
-    for i in range(numberOfIterations):
-        lst =sorted(lst, key=lambda x: x[0],reverse=True)
-        largest_area = lst[0]
-        if largest_area[0]<2500:
-            pass
-        else:
-            #remove the largest contour from super_lst as it gets split
-            del lst[0]
-            another_lst = erode_until_split(largest_area[1])
+    lst =sorted(lst, key=lambda x: x[0],reverse=True)
+    largest_area = lst[0]
+    while largest_area[0]>2500:
+        #remove the largest contour from super_lst as it gets split
+        del lst[0]
+        another_lst = erode_until_split(largest_area[1])
         
-            #merge another_lst into super_lst
-            index = 0
-            for j in another_lst:
-                if j[0]==0:
-                    del another_lst[index]
-                else:
-                    lst.append(j)
-                index += 1
-            
+        #merge another_lst into lst
+        index = 0
+        for j in another_lst:
+            if j[0]==0:
+                del another_lst[index]
+            else:
+                lst.append(j)
+            index += 1
+        print(lst)
+        lst = sorted(lst, key=lambda x: x[0],reverse=True)
+        largest_area=lst[0]
+    #creates the final binary image      
     final_map = np.zeros((723,1129))
     for i in range(len(lst)):
         final_map += lst[i][1]
         
-    return final_map
+    return final_map,lst
 
 
 for i in lst_cropped_binary:
-    plt.imshow(individual_erosion(i, 1))
-    plt.show()
-
-
-
-
-
-
-
-
-
-
-
-
-
+    tryhard,lst = individual_erosion(i)
+    f, axarr = plt.subplots(2,1)
+    axarr[0].imshow(i)
+    axarr[1].imshow(tryhard)
