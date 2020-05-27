@@ -11,7 +11,7 @@ import tools.prototyping_cuba as prototyper
 import tools.methods_circle_detection as methods
 from matplotlib import pyplot as plt
 import tools.segmentation_kmeans as segmentator
-
+import numpy as np
 
 def info(image):
     print(type(image))
@@ -25,21 +25,21 @@ def show(image):
     plt.show()
 
 
-def segment_on_dt(image_original, imgage_binary):
+def segment_on_dt(image_original, image_binary):
     # don't really know what this is for
-    border = cv2.dilate(imgage_binary, None, iterations=5)
+    border = cv2.dilate(image_binary, None, iterations=2)
     border = border - cv2.erode(border, None)
-    info(border)
+    # info(border)
 
-    # create distance transform data
-    image_distance_transform = cv2.distanceTransform(imgage_binary, 2, 3)
-    info(image_distance_transform)
+    # # create distance transform data
+    # image_distance_transform = cv2.distanceTransform(image_binary, 2, 3)
+    # info(image_distance_transform)
 
-    image_distance_transform = ((image_distance_transform - image_distance_transform.min()) / (image_distance_transform.max() - image_distance_transform.min()) * 255).astype(numpy.uint8)
-    info(image_distance_transform)
+    # image_distance_transform = ((image_distance_transform - image_distance_transform.min()) / (image_distance_transform.max() - image_distance_transform.min()) * 255).astype(numpy.uint8)
+    # info(image_distance_transform)
 
-    image_binary = cv2.threshold(image_distance_transform, 180, 255, cv2.THRESH_BINARY)[1]
-    info(image_binary)
+    # image_binary = cv2.threshold(image_distance_transform, 180, 255, cv2.THRESH_BINARY)[1]
+    # info(image_binary)
 
     # making markers i think
     labels, ncc = label(image_binary)
@@ -59,7 +59,7 @@ def segment_on_dt(image_original, imgage_binary):
     return 255 - labels
 
 
-image = cv2.imread("./data/ID03/ID03post.png")
+image = cv2.imread("./data/ID05/ID05post.png")
 
 # Pre-processing.
 img_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -73,6 +73,8 @@ image_segmented = segmentator.run_kmean_on_single_image(image_blurred, k=10, pre
 lower_threshold = imut.intelligent_get_threshold(image_segmented, fraction_of_image_threshold=0.08)
 
 img_bin = cv2.threshold(img_gray, lower_threshold, 255, cv2.THRESH_OTSU)[1]
+show(img_bin)
+
 # #####################################################################
 
 img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN, numpy.ones((3, 3), dtype=int))

@@ -6,7 +6,8 @@ import tools.prototyping_cuba as prototyper
 import tools.methods_circle_detection as methods
 from matplotlib import pyplot as plt
 import tools.segmentation_kmeans as segmentator
-
+import numpy as np
+import scipy.misc
 """ first we need to decide if we want to recompute our data with different
 parameters """
 
@@ -59,7 +60,7 @@ else:
 
 """ here we attempt to find circles in our image, once with image and once with it's edge map """
 #dict_data_cropped = methods.crop_images(dict_data_segmented, y0=100, y1=600, x0=150,x1=900)
-hough_circle_detection = True
+hough_circle_detection = False
 if hough_circle_detection or recompute_data:
     dict_of_centres = {}
     
@@ -105,7 +106,7 @@ if find_electrodes or recompute_data:
 
 
         # find local max
-        image_max = ndi.maximum_filter(image_blurred, size=10)  # size gives the shape that is taken from the
+        #image_max = ndi.maximum_filter(image_blurred, size=10)  # size gives the shape that is taken from the
         # to the filter function.
 
         # segment image using k-means segmentation
@@ -123,19 +124,17 @@ if find_electrodes or recompute_data:
 
         # binarize image
         image_binary = methods.binarize_image(image_segmented, lower_threshold=lower_threshold, upper_threshold=255)
-        list_all_preprocessed.append(image_binary)  # add to a list to plot it later
+        list_all_preprocessed_binaries.append(image_binary)  # add to a list to plot it later
         # apply watershed
         #image_watershed = cv2.watershed(image_blurred, image_binary)
         # now find the contours to calculate their centres
         image_binary = cv2.convertScaleAbs(image_binary)  # need to convert to special format...
-        contours, hierarchy = cv2.findContours(image_binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)  # find contours
-
         # actually find contours
         im2, contours, hierarchy = cv2.findContours(image_binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         # calculating the centres of each contour
         lst_of_centres = []
-
+        black_img = np.zeros((723,1129))
         for c in contours:
             M = cv2.moments(c)
             if M["m00"] != 0:
@@ -149,7 +148,7 @@ if find_electrodes or recompute_data:
         for i in lst_of_centres:
             x = i[0]
             y = i[1]
-            result = cv2.circle(image_binary, (x, y), 5, (0, 0, 255), -1)
+            result = cv2.circle(black_img, (x, y), 1, (255), -1)
         result_dict[patient] = result, lst_of_centres
     img.plot_preprocessed_image(list_all_preprocessed_binaries)
     img.plot_preprocessed_image(list_all_preprocessed_distance_transform)
