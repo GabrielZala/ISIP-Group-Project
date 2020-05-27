@@ -120,12 +120,12 @@ if find_electrodes or recompute_data:
         image_binary = methods.binarize_image(image_segmented, lower_threshold=lower_threshold, upper_threshold=255)
         list_all_preprocessed.append(image_binary)  # add to a list to plot it later
         # apply watershed
-        image_watershed = cv2.watershed(image_blurred, image_binary)
+        #image_watershed = cv2.watershed(image_blurred, image_binary)
         # now find the contours to calculate their centres
-        image_watershed = cv2.convertScaleAbs(image_watershed)  # need to convert to special format...
+        image_binary = cv2.convertScaleAbs(image_binary)  # need to convert to special format...
 
         # actually find contours
-        im2, contours, hierarchy = cv2.findContours(image_watershed, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        im2, contours, hierarchy = cv2.findContours(image_binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
 
         # calculating the centres of each contour
         lst_of_centres = []
@@ -153,49 +153,3 @@ for i in result_dict:
     plt.show()
     
     
-#####################
-# https://stackoverflow.com/questions/11294859/how-to-define-the-markers-for-watershed-in-opencv
-import sys
-import cv2
-import numpy
-from scipy.ndimage import label
-
-def segment_on_dt(a, img):
-    border = cv2.dilate(img, None, iterations=5)
-    border = border - cv2.erode(border, None)
-
-    dt = cv2.distanceTransform(img, 2, 3)
-    dt = ((dt - dt.min()) / (dt.max() - dt.min()) * 255).astype(numpy.uint8)
-    _, dt = cv2.threshold(dt, 140, 255, cv2.THRESH_BINARY)
-    lbl, ncc = label(dt)
-    print(dt)
-    lbl = lbl * (255 / (ncc + 1))
-    # Completing the markers now. 
-    lbl[border == 255] = 255
-    
-    lbl = lbl.astype(numpy.int32)
-    print(lbl)
-    cv2.watershed(a, lbl)
-
-    lbl[lbl == -1] = 0
-    lbl = lbl.astype(numpy.uint8)
-    return 255 - lbl
-
-img = cv2.imread("/Users/conra/Desktop/ISIP-Group-Project/DATA/ID03/ID03post.png")
-
-# Pre-processing
-img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)    
-img_gray = cv2.GaussianBlur(img_gray, (9,9), 1)
-_, img_bin = cv2.threshold(img_gray, 0, 255,
-        cv2.THRESH_OTSU)
-img_bin = cv2.morphologyEx(img_bin, cv2.MORPH_OPEN,
-        numpy.ones((3, 3), dtype=int))
-
-
-result = segment_on_dt(img, img_bin)
-result[result != 255] = 0
-result = cv2.dilate(result, None)
-img[result == 255] = (0, 0, 255)
-cv2.imshow('Example - Show image in window',img)
-cv2.waitKey(0) # waits until a key is pressed
-cv2.destroyAllWindows()
