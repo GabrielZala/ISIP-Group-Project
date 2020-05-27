@@ -14,7 +14,7 @@ recompute_data = False
 
 """ in this chapter we handle the preprocessing of our images, loading,
 cropping and normalizing """
-reload_images = False
+reload_images = True
 if reload_images or recompute_data:
     # load, crop and normalize our images and store them
     # into a dictionary {patient_label:[array_pre, array_post]}
@@ -89,16 +89,20 @@ if find_electrodes or recompute_data:
     result_dict = {}
     from scipy import ndimage as ndi
 
-    list_all_preprocessed = []
+    list_all_preprocessed_binaries = []
+    list_all_preprocessed_distance_transform = []
 
     for index_patient, patient in enumerate(dict_data_segmented):
 
         # pick and convert image
         image = dict_data[patient][1]
+
         image = image.astype("uint8")
 
         # blur image
         image_blurred = cv2.medianBlur(image, 29)
+
+
 
         # find local max
         image_max = ndi.maximum_filter(image_blurred, size=10)  # size gives the shape that is taken from the
@@ -108,6 +112,7 @@ if find_electrodes or recompute_data:
         image_segmented = segmentator.run_kmean_on_single_image(image_blurred, k=10,
                                                                 precision=10000, max_iterations=1000)
 
+        # img.show(image_segmented)
         # find lower threshold for binarizing images
         """ the idea i had here was that all the electrodes always occupy the same area on each picture.
             this function basically returns the pixel value, at which we need to threshold in our binary
@@ -123,6 +128,7 @@ if find_electrodes or recompute_data:
         #image_watershed = cv2.watershed(image_blurred, image_binary)
         # now find the contours to calculate their centres
         image_binary = cv2.convertScaleAbs(image_binary)  # need to convert to special format...
+        contours, hierarchy = cv2.findContours(image_binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)  # find contours
 
         # actually find contours
         im2, contours, hierarchy = cv2.findContours(image_binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
@@ -145,7 +151,9 @@ if find_electrodes or recompute_data:
             y = i[1]
             result = cv2.circle(image_binary, (x, y), 5, (0, 0, 255), -1)
         result_dict[patient] = result, lst_of_centres
-    img.plot_preprocessed_image(list_all_preprocessed)
+    img.plot_preprocessed_image(list_all_preprocessed_binaries)
+    img.plot_preprocessed_image(list_all_preprocessed_distance_transform)
+
 
 
 for i in result_dict:
