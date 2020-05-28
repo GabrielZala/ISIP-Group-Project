@@ -3,8 +3,8 @@ import glob
 from matplotlib import pyplot as plt
 import cv2
 
+
 def read_pictures():
-  
     plt.rcParams['image.cmap'] = 'gray'
 
     # load the data in a dictionary where each key is the patients ID and the first
@@ -39,7 +39,7 @@ def read_pictures():
                 for i_cols, list_values in enumerate(row):
                     array_temp[i_rows, i_cols] = list_values[0]  # just pick the 1st value of the list
 
-            pre_img = array_temp.astype("uint8") # so it retains the same datatype as other arrays in the dict
+            pre_img = array_temp.astype("uint8")  # so it retains the same datatype as other arrays in the dict
 
         # now this is stupid, the png's have different data structures which lead some of them to use arrays instead
         if type(post_img[0, 0]) == type(post_img):  # of uint8's to save pixel data, this finds them and corrects.
@@ -72,8 +72,8 @@ def read_pictures():
             val_range = max_val - min_val
             # calculate new values
             data[patient][i] = ((data[patient][i] - min_val) / val_range) * 255
-            
-            #apply histogram equalization instead of the normalization above:
-            #data[patient][i] = equalize_histogram(data[patient][i])
-    
+
+            # apply histogram equalization instead of the normalization above:
+            # data[patient][i] = equalize_histogram(data[patient][i])
+
     return data

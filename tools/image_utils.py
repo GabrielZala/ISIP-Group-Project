@@ -3,8 +3,10 @@ from skimage import feature, color
 import numpy as np
 import copy
 from scipy.ndimage import morphology as mp
-import cv2 # conda install -c menpo opencv
+import cv2  # conda install -c menpo opencv
 from scipy import ndimage as ndi
+
+
 def edge_map(image, sigma):
     # Returns the edge map of a given image.
     #
@@ -232,7 +234,7 @@ def watershed(image, image_distance_transform):
 
     plotlist = [image_distance_transform]
     image_distance_transform = ((image_distance_transform - image_distance_transform.min()) / (
-                image_distance_transform.max() - image_distance_transform.min()) * 255).astype(numpy.uint8)
+            image_distance_transform.max() - image_distance_transform.min()) * 255).astype(numpy.uint8)
     plotlist.append(image_distance_transform)
 
     image_distance_transform = cv2.threshold(image_distance_transform, 180, 255, cv2.THRESH_BINARY)[1]
@@ -249,8 +251,6 @@ def watershed(image, image_distance_transform):
 
     lbl = lbl.astype(numpy.int32)
 
-
-
     image_shape = np.shape(image)
 
     image_converted = np.empty(shape=(image_shape[0], image_shape[1], 3))
@@ -266,8 +266,8 @@ def watershed(image, image_distance_transform):
     lbl = lbl.astype(numpy.uint8)
     return 255 - lbl
 
-def run_kmean_on_single_image(image_array, k, precision=10, max_iterations=0.1):
 
+def run_kmean_on_single_image(image_array, k, precision=10, max_iterations=0.1):
     image_array = np.uint8(image_array)
 
     # blur image beforehand
@@ -291,12 +291,11 @@ def run_kmean_on_single_image(image_array, k, precision=10, max_iterations=0.1):
 
     res = center[label.flatten()]  # label is actually already flat, but do it anyways for consistency
     res2 = res.reshape(image_array.shape)
-    
+
     return res2
 
 
 def segment_img_data(dict_data, k_pre=3, k_post=3):
-
     Ks = [k_pre, k_post]
 
     dict_data_segmented = {}
@@ -313,11 +312,12 @@ def segment_img_data(dict_data, k_pre=3, k_post=3):
 
             segmented_image = run_kmean_on_single_image(image, K)  # generate segmented image
 
-            segmented_images_current_patient.append(segmented_image)   # append segmented image to list
+            segmented_images_current_patient.append(segmented_image)  # append segmented image to list
 
         dict_data_segmented[patient] = segmented_images_current_patient  # add patient images to data dictionary
 
     return dict_data_segmented
+
 
 #########################cudi's stuff####################
 # binarize image
@@ -326,6 +326,7 @@ def binarize_image(image, lower_threshold, upper_threshold):
     image = image * mask  # within thresholds
     image[image > 0] = 255  # set all values to 255 that are above 0 (black in the image)
     return image
+
 
 def calculate_binaries(dict_data):
     """creates binary images out of the grayscale images"""
@@ -338,7 +339,7 @@ def calculate_binaries(dict_data):
         image_blurred = cv2.medianBlur(image, 29)
         # segment image using k-means segmentation
         image_segmented = run_kmean_on_single_image(image_blurred, k=10,
-                                                                precision=10000, max_iterations=1000)
+                                                    precision=10000, max_iterations=1000)
         # find lower threshold for binarizing images
         """ the idea i had here was that all the electrodes always occupy the same area on each picture.
             this function basically returns the pixel value, at which we need to threshold in our binary
@@ -346,102 +347,106 @@ def calculate_binaries(dict_data):
             "fraction_of_image_threshold" percent of the picture - electrodes seem to take up about 5-10% of each
              image"""
         lower_threshold = intelligent_get_threshold(image_segmented,
-                                                        fraction_of_image_threshold=0.08)
+                                                    fraction_of_image_threshold=0.08)
         # binarize image
-        image_binary = binarize_image(image_segmented, 
-                                              lower_threshold=lower_threshold, upper_threshold=255)
+        image_binary = binarize_image(image_segmented,
+                                      lower_threshold=lower_threshold, upper_threshold=255)
         list_all_preprocessed_binaries.append(image_binary)
     return list_all_preprocessed_binaries
+
 
 def crop_binaries(list_of_binary_images):
     """this function takes the post binary images and crops them where the spiral
     hits the edge of the image in order to reduce the area of possible electrodes
     returns a list of images all with the previous size of post OP images"""
     lst_cropped_binary = []
-    replacement_columns = np.zeros((723,250),dtype=int)
+    replacement_columns = np.zeros((723, 250), dtype=int)
     for i in list_of_binary_images:
-        if sum(i[:,0]) != 0: #if spiral starts left side remove some and add empty space
-            new_binary = i[:,250:]
-            new_binary = np.append(replacement_columns,new_binary,axis=1)
+        if sum(i[:, 0]) != 0:  # if spiral starts left side remove some and add empty space
+            new_binary = i[:, 250:]
+            new_binary = np.append(replacement_columns, new_binary, axis=1)
             lst_cropped_binary.append(new_binary.astype("uint8"))
-        if sum(i[:,0]) == 0:
-            new_binary = i[:,:(1129-250)]
-            new_binary = np.append(new_binary,replacement_columns,axis=1)
+        if sum(i[:, 0]) == 0:
+            new_binary = i[:, :(1129 - 250)]
+            new_binary = np.append(new_binary, replacement_columns, axis=1)
             lst_cropped_binary.append(new_binary.astype("uint8"))
     return lst_cropped_binary
+
 
 def area_of_contour(binary_image):
     area = cv2.contourArea(binary_image[0])
     return area
 
+
 def find_contours(image):
-       _, contours,_ = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-       return contours
+    contours, hierarchy = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    return contours
+
 
 def area_of_each_contour(contours):
     contour_counter = 0
-    super_lst =[] #super_lst = [[AREA,IMG],[AREA,IMG]...]
+    super_lst = []  # super_lst = [[AREA,IMG],[AREA,IMG]...]
     for i in contours:
-        black_img = np.zeros((723,1129))
-        black_img = cv2.fillPoly(black_img, pts =[i], color = (255)).astype("uint8")
+        black_img = np.zeros((723, 1129))
+        black_img = cv2.fillPoly(black_img, pts=[i], color=(255)).astype("uint8")
         single_contour = find_contours(black_img)
         area = area_of_contour(single_contour)
-        super_lst.append([area,black_img])
+        super_lst.append([area, black_img])
         contour_counter += 1
     return super_lst
+
 
 def erode_until_split(image_of_largest_area_in_contour_dict):
     image = image_of_largest_area_in_contour_dict
     contours = find_contours(image)
     number_of_blops = 0
     counter = 0
-    
-    while number_of_blops<2:
+
+    while number_of_blops < 2:
         counter += 1
-        image = ndi.binary_erosion(image,iterations=1).astype("uint8")
+        image = ndi.binary_erosion(image, iterations=1).astype("uint8")
         contours = find_contours(image)
         number_of_blops = len(contours)
         if counter == 20:
             break
-    #produce images from the two blops
-    another_lst=[]
+    # produce images from the two blops
+    another_lst = []
     for i in contours:
-        black_img = np.zeros((723,1129))
-        black_img = cv2.fillPoly(black_img, pts =[i], color = (255)).astype("uint8")
+        black_img = np.zeros((723, 1129))
+        black_img = cv2.fillPoly(black_img, pts=[i], color=(255)).astype("uint8")
         single_contour = find_contours(black_img)
         area = area_of_contour(single_contour)
-        another_lst.append([area,black_img])
-    #calculate areas 
+        another_lst.append([area, black_img])
+    # calculate areas
     return another_lst
 
 
 def individual_erosion(binary_image):
-    
     contours_lst = find_contours(binary_image)
-    lst =[]
+    lst = []
     lst = area_of_each_contour(contours_lst)
-    lst =sorted(lst, key=lambda x: x[0],reverse=True)
+    lst = sorted(lst, key=lambda x: x[0], reverse=True)
     largest_area = lst[0]
-    while largest_area[0]>2500:
-        #remove the largest contour from super_lst as it gets split
+    while largest_area[0] > 2500:
+        # remove the largest contour from super_lst as it gets split
         del lst[0]
         another_lst = erode_until_split(largest_area[1])
-        #merge another_lst into lst
+        # merge another_lst into lst
         index = 0
         for j in another_lst:
-            if j[0]==0:
+            if j[0] == 0:
                 del another_lst[index]
             else:
                 lst.append(j)
             index += 1
 
-        lst = sorted(lst, key=lambda x: x[0],reverse=True)
-        largest_area=lst[0]
-    #creates the final binary image      
-    final_map = np.zeros((723,1129))
+        lst = sorted(lst, key=lambda x: x[0], reverse=True)
+        largest_area = lst[0]
+    # creates the final binary image
+    final_map = np.zeros((723, 1129))
     for i in range(len(lst)):
         final_map += lst[i][1]
-        
+
     return final_map
 
 
@@ -461,10 +466,9 @@ def get_center_of_electrodes(lst_of_images):
             coords = [cX, cY]
             lst_of_centers.append(coords)
         print("number of centres found", len(lst_of_centers))
-        result_dict[counter] = lst_of_centers  
+        result_dict[counter] = lst_of_centers
         counter += 1
     return result_dict
-
 
 
 def hough_circle(image):
@@ -486,8 +490,8 @@ def hough_circle(image):
     circles = np.uint16(np.around(circles))  # what the fuck is this
     return circles
 
-def circles_show(image, circles):
 
+def circles_show(image, circles):
     cimg = cv2.cvtColor(image.astype("uint8"), cv2.COLOR_GRAY2BGR)
 
     for i in circles[0, :]:
@@ -500,19 +504,21 @@ def circles_show(image, circles):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
+
 def get_center(array_of_center_coords):
-    #need to find a way to remove outliers...
-    center_coords = array_of_center_coords.reshape((len(array_of_center_coords[0]),len(array_of_center_coords[0][0])))
-    center_x = int(np.sum(center_coords[:,0])/len(center_coords[:,0]))
-    center_y = int(np.sum(center_coords[:,1])/len(center_coords[:,1]))
-    spiral_center = np.array([[[center_x,center_y,10]]])
+    # need to find a way to remove outliers...
+    center_coords = array_of_center_coords.reshape((len(array_of_center_coords[0]), len(array_of_center_coords[0][0])))
+    center_x = int(np.sum(center_coords[:, 0]) / len(center_coords[:, 0]))
+    center_y = int(np.sum(center_coords[:, 1]) / len(center_coords[:, 1]))
+    spiral_center = np.array([[[center_x, center_y, 10]]])
     return spiral_center
 
-def crop_images(input_dict,y0=0,y1=723,x0=0,x1=1129):
+
+def crop_images(input_dict, y0=0, y1=723, x0=0, x1=1129):
     dictionary = input_dict
     for i in dictionary:
         for j in range(2):
             image = dictionary[i][j]
-            image = image[y0:y1,x0:x1]
+            image = image[y0:y1, x0:x1]
             dictionary[i][j] = image
     return dictionary

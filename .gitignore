@@ -5,3 +5,5 @@ dict_data.bin
 dict_data_edges.bin
 
 *.jpg
+
+tools/__pycache__/

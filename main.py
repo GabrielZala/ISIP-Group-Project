@@ -56,19 +56,19 @@ else:
     img.plot_image_list(dict_data_segmented[patient])"""
 
 """ here we attempt to find circles in our image, once with image and once with it's edge map """
-#dict_data_cropped = methods.crop_images(dict_data_segmented, y0=100, y1=600, x0=150,x1=900)
+# dict_data_cropped = methods.crop_images(dict_data_segmented, y0=100, y1=600, x0=150,x1=900)
 hough_circle_detection = False
 if hough_circle_detection:
     dict_of_centres = {}
-    
+
     for patient in dict_data_segmented:
-        
+
         image = dict_data_segmented[patient][0].astype("uint8")
-        #image = cv2.medianBlur(image, 11)
+        # image = cv2.medianBlur(image, 11)
         try:
-            circles_image = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 3, 10000, 
-                                                       param1=50, param2=30, minRadius=100, 
-                                                       maxRadius=200)
+            circles_image = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 3, 10000,
+                                             param1=50, param2=30, minRadius=100,
+                                             maxRadius=200)
             dict_of_centres[patient] = circles_image
             print(patient, "in try", "number of circles found:", len(circles_image[0]))
         except:
@@ -85,7 +85,7 @@ the cochlea, then the contours are extracted and get eroded depending of their a
 bigger areas get eroded first until the biggest area is too small for further erosion.
 Then the center of mass of each contour is calculated and represents a single electrode"""
 print("processing images")
-lst_binary_preprocessed=img.calculate_binaries(dict_data)
+lst_binary_preprocessed = img.calculate_binaries(dict_data)
 lst_cropped_binaries = img.crop_binaries(lst_binary_preprocessed)
 lst_individual_erosion = [img.individual_erosion(i) for i in lst_cropped_binaries]
 dict_of_electrode_centers = img.get_center_of_electrodes(lst_individual_erosion)
@@ -95,27 +95,18 @@ if plot_electrode_centers:
     for patient in dict_data:
         coords = dict_of_electrode_centers[counter]
         counter += 1
-        final_map = np.zeros((723,1129))
+        final_map = np.zeros((723, 1129))
         for coordinate in coords:
             x = coordinate[0]
             y = coordinate[1]
-            cv2.circle(dict_data[patient][1],(x,y),10,(0,0,255),-1)
+            cv2.circle(dict_data[patient][1], (x, y), 10, (0, 0, 255), -1)
         plt.imshow(dict_data[patient][1])
         plt.show()
-            
-#save some plots at some points during pipeline for the report
+
+# save some plots at some points during pipeline for the report
 # import scipy.misc
 # scipy.misc.imsave('afterWatermark.jpg', dict_data["18"][1]) 
 # scipy.misc.imsave("afterBinarization.jpg",lst_binary_preprocessed[8])
 # scipy.misc.imsave("afterCropping.jpg",lst_cropped_binaries[8])
 # scipy.misc.imsave("afterErosion.jpg",lst_individual_erosion[8])
-# scipy.misc.imsave('afterFindingElectrodes.jpg', dict_data["18"][1]) 
-
-
-
-
-
-
-
-
-
+# scipy.misc.imsave('afterFindingElectrodes.jpg', dict_data["18"][1])
