@@ -1,6 +1,6 @@
 import cv2  # conda install -c menpo opencv
 import numpy as np
-import tools.image_utils as img
+import image_utils as img
 
 
 # binarize image

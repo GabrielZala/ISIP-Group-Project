@@ -266,3 +266,151 @@ def watershed(image, image_distance_transform):
     lbl[lbl == -1] = 0
     lbl = lbl.astype(numpy.uint8)
     return 255 - lbl
+
+
+import segmentation_kmeans as segmentator
+from scipy import ndimage as ndi
+#########################cudi's stuff####################
+# binarize image
+def binarize_image(image, lower_threshold, upper_threshold):
+    mask = (image > lower_threshold) & (image < upper_threshold)  # sets all values to 0 that are not within
+    image = image * mask  # within thresholds
+    image[image > 0] = 255  # set all values to 255 that are above 0 (black in the image)
+    return image
+
+def calculate_binaries(dict_data):
+    """creates binary images out of the grayscale images"""
+    list_all_preprocessed_binaries = []
+    for index_patient, patient in enumerate(dict_data):
+        # pick and convert image
+        image = dict_data[patient][1]
+        image = image.astype("uint8")
+        # blur image
+        image_blurred = cv2.medianBlur(image, 29)
+        # segment image using k-means segmentation
+        image_segmented = segmentator.run_kmean_on_single_image(image_blurred, k=10,
+                                                                precision=10000, max_iterations=1000)
+        # find lower threshold for binarizing images
+        """ the idea i had here was that all the electrodes always occupy the same area on each picture.
+            this function basically returns the pixel value, at which we need to threshold in our binary
+            function, so that all pixels that have a higher intensity will collectively make up at least 
+            "fraction_of_image_threshold" percent of the picture - electrodes seem to take up about 5-10% of each
+             image"""
+        lower_threshold = intelligent_get_threshold(image_segmented,
+                                                        fraction_of_image_threshold=0.08)
+        # binarize image
+        image_binary = binarize_image(image_segmented, 
+                                              lower_threshold=lower_threshold, upper_threshold=255)
+        list_all_preprocessed_binaries.append(image_binary)
+    return list_all_preprocessed_binaries
+
+def crop_binaries(list_of_binary_images):
+    """this function takes the post binary images and crops them where the spiral
+    hits the edge of the image in order to reduce the area of possible electrodes
+    returns a list of images all with the previous size of post OP images"""
+    lst_cropped_binary = []
+    replacement_columns = np.zeros((723,250),dtype=int)
+    for i in list_of_binary_images:
+        if sum(i[:,0]) != 0: #if spiral starts left side remove some and add empty space
+            new_binary = i[:,250:]
+            new_binary = np.append(replacement_columns,new_binary,axis=1)
+            lst_cropped_binary.append(new_binary.astype("uint8"))
+        if sum(i[:,0]) == 0:
+            new_binary = i[:,:(1129-250)]
+            new_binary = np.append(new_binary,replacement_columns,axis=1)
+            lst_cropped_binary.append(new_binary.astype("uint8"))
+    return lst_cropped_binary
+
+def area_of_contour(binary_image):
+    area = cv2.contourArea(binary_image[0])
+    return area
+
+def find_contours(image):
+       _, contours,_ = cv2.findContours(image, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+       return contours
+
+def area_of_each_contour(contours):
+    contour_counter = 0
+    super_lst =[] #super_lst = [[AREA,IMG],[AREA,IMG]...]
+    for i in contours:
+        black_img = np.zeros((723,1129))
+        black_img = cv2.fillPoly(black_img, pts =[i], color = (255)).astype("uint8")
+        single_contour = find_contours(black_img)
+        area = area_of_contour(single_contour)
+        super_lst.append([area,black_img])
+        contour_counter += 1
+    return super_lst
+
+def erode_until_split(image_of_largest_area_in_contour_dict):
+    image = image_of_largest_area_in_contour_dict
+    contours = find_contours(image)
+    number_of_blops = 0
+    counter = 0
+    
+    while number_of_blops<2:
+        counter += 1
+        image = ndi.binary_erosion(image,iterations=1).astype("uint8")
+        contours = find_contours(image)
+        number_of_blops = len(contours)
+        if counter == 20:
+            break
+    #produce images from the two blops
+    another_lst=[]
+    for i in contours:
+        black_img = np.zeros((723,1129))
+        black_img = cv2.fillPoly(black_img, pts =[i], color = (255)).astype("uint8")
+        single_contour = find_contours(black_img)
+        area = area_of_contour(single_contour)
+        another_lst.append([area,black_img])
+    #calculate areas 
+    return another_lst
+
+
+def individual_erosion(binary_image):
+    
+    contours_lst = find_contours(binary_image)
+    lst =[]
+    lst = area_of_each_contour(contours_lst)
+    lst =sorted(lst, key=lambda x: x[0],reverse=True)
+    largest_area = lst[0]
+    while largest_area[0]>2500:
+        #remove the largest contour from super_lst as it gets split
+        del lst[0]
+        another_lst = erode_until_split(largest_area[1])
+        #merge another_lst into lst
+        index = 0
+        for j in another_lst:
+            if j[0]==0:
+                del another_lst[index]
+            else:
+                lst.append(j)
+            index += 1
+
+        lst = sorted(lst, key=lambda x: x[0],reverse=True)
+        largest_area=lst[0]
+    #creates the final binary image      
+    final_map = np.zeros((723,1129))
+    for i in range(len(lst)):
+        final_map += lst[i][1]
+        
+    return final_map
+
+def get_center_of_electrodes(lst_of_images):
+    result_dict = {}
+    counter = 1
+    for image in lst_of_images:
+        contours = find_contours(image.astype("uint8"))
+        lst_of_centers = []
+        for c in contours:
+            M = cv2.moments(c)
+            if M["m00"] != 0:
+                cX = int(M["m10"] / M["m00"])
+                cY = int(M["m01"] / M["m00"])
+            else:
+                cX, cY = 0, 0
+            coords = [cX, cY]
+            lst_of_centers.append(coords)
+        print("number of centres found", len(lst_of_centers))
+        result_dict[counter] = lst_of_centers  
+        counter += 1
+    return result_dict
