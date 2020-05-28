@@ -1,7 +1,5 @@
 import numpy as np
 import glob
-from imageio import imread
-from tools.image_utils import equalize_histogram
 from matplotlib import pyplot as plt
 import cv2
 

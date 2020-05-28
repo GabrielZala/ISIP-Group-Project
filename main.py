@@ -2,11 +2,8 @@ import cv2
 import tools.data_manager as data_manager
 import pickle
 import tools.image_utils as img
-import tools.methods_circle_detection as methods
 from matplotlib import pyplot as plt
-import tools.segmentation_kmeans as segmentator
 import numpy as np
-
 
 """ first we need to decide if we want to recompute our data with different
 parameters """
@@ -47,7 +44,7 @@ recompute_segmented_images = True
 if recompute_segmented_images or recompute_data:
     # create segmented images using K-means clustering
     print("recompute Segmented images")
-    dict_data_segmented = segmentator.segment_img_data(dict_data, 3, 3)
+    dict_data_segmented = img.segment_img_data(dict_data, 3, 3)
     with open("dict_data_segmented.bin", "wb") as bin_file:
         pickle.dump(dict_data_segmented, bin_file)
 else:
@@ -79,7 +76,7 @@ if hough_circle_detection:
             pass
 
     for i in dict_of_centres:  # use arrowkeys to go through the images
-        methods.circles_show(dict_data_segmented[i][0], dict_of_centres[i])
+        img.circles_show(dict_data_segmented[i][0], dict_of_centres[i])
 
 """ this approach trys to find the electrodes using their intensities and contours.
 The images get first binarized where each image is thresholded by looking at their 
@@ -106,9 +103,19 @@ if plot_electrode_centers:
         plt.imshow(dict_data[patient][1])
         plt.show()
             
-    
-    
+#save some plots at some points during pipeline for the report
+# import scipy.misc
+# scipy.misc.imsave('afterWatermark.jpg', dict_data["18"][1]) 
+# scipy.misc.imsave("afterBinarization.jpg",lst_binary_preprocessed[8])
+# scipy.misc.imsave("afterCropping.jpg",lst_cropped_binaries[8])
+# scipy.misc.imsave("afterErosion.jpg",lst_individual_erosion[8])
+# scipy.misc.imsave('afterFindingElectrodes.jpg', dict_data["18"][1]) 
 
 
-    
-  
+
+
+
+
+
+
+

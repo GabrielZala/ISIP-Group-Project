@@ -3,9 +3,8 @@ from skimage import feature, color
 import numpy as np
 import copy
 from scipy.ndimage import morphology as mp
-import cv2
-
-
+import cv2 # conda install -c menpo opencv
+from scipy import ndimage as ndi
 def edge_map(image, sigma):
     # Returns the edge map of a given image.
     #
@@ -267,9 +266,59 @@ def watershed(image, image_distance_transform):
     lbl = lbl.astype(numpy.uint8)
     return 255 - lbl
 
+def run_kmean_on_single_image(image_array, k, precision=10, max_iterations=0.1):
 
-import segmentation_kmeans as segmentator
-from scipy import ndimage as ndi
+    image_array = np.uint8(image_array)
+
+    # blur image beforehand
+    image_array = cv2.medianBlur(image_array, 11)
+
+    # make the image flat
+    image_flattened = image_array.flatten()
+    # image_flattened = image_array.reshape((-1, 3))
+
+    # convert to np.float32
+    image_flat_converted = np.float32(image_flattened)
+
+    # define criteria, number of clusters(K) and apply kmeans()
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, precision, max_iterations)
+
+    # run k-means clustering
+    ret, label, center = cv2.kmeans(image_flat_converted, k, None, criteria, 10, cv2.KMEANS_PP_CENTERS)
+
+    # Now convert back into uint8, and make original image
+    center = np.uint8(center)
+
+    res = center[label.flatten()]  # label is actually already flat, but do it anyways for consistency
+    res2 = res.reshape(image_array.shape)
+    
+    return res2
+
+
+def segment_img_data(dict_data, k_pre=3, k_post=3):
+
+    Ks = [k_pre, k_post]
+
+    dict_data_segmented = {}
+
+    for patient in dict_data:
+
+        segmented_images_current_patient = []
+
+        for i in range(2):  # for pre and post image, hence indices [0, 1]
+
+            # get pre image & K-parameter
+            image = dict_data[patient][i]
+            K = Ks[i]
+
+            segmented_image = run_kmean_on_single_image(image, K)  # generate segmented image
+
+            segmented_images_current_patient.append(segmented_image)   # append segmented image to list
+
+        dict_data_segmented[patient] = segmented_images_current_patient  # add patient images to data dictionary
+
+    return dict_data_segmented
+
 #########################cudi's stuff####################
 # binarize image
 def binarize_image(image, lower_threshold, upper_threshold):
@@ -288,7 +337,7 @@ def calculate_binaries(dict_data):
         # blur image
         image_blurred = cv2.medianBlur(image, 29)
         # segment image using k-means segmentation
-        image_segmented = segmentator.run_kmean_on_single_image(image_blurred, k=10,
+        image_segmented = run_kmean_on_single_image(image_blurred, k=10,
                                                                 precision=10000, max_iterations=1000)
         # find lower threshold for binarizing images
         """ the idea i had here was that all the electrodes always occupy the same area on each picture.
@@ -395,6 +444,7 @@ def individual_erosion(binary_image):
         
     return final_map
 
+
 def get_center_of_electrodes(lst_of_images):
     result_dict = {}
     counter = 1
@@ -414,3 +464,55 @@ def get_center_of_electrodes(lst_of_images):
         result_dict[counter] = lst_of_centers  
         counter += 1
     return result_dict
+
+
+
+def hough_circle(image):
+    """
+    Hough Circle Transform:
+        first number in function: dp=1, resolution factor between image and detection
+        second number : minDist = minimum number of pixels between circle centers
+        param1: number used for canny edge detection
+        param2: threshold for circle detection (small values=more circles will be detected)
+        min/maxRadius: only detects circles that are between those values
+    """
+
+    # run circle detection algo
+    circles = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 2, 0, param1=30, param2=100, minRadius=100, maxRadius=200)
+    """print(type(circles))  # just some data on what's found
+    print(circles)
+    print(np.shape(circles))"""
+
+    circles = np.uint16(np.around(circles))  # what the fuck is this
+    return circles
+
+def circles_show(image, circles):
+
+    cimg = cv2.cvtColor(image.astype("uint8"), cv2.COLOR_GRAY2BGR)
+
+    for i in circles[0, :]:
+        # draw the outer circle
+        cv2.circle(cimg, (i[0], i[1]), i[2], (0, 255, 0), 2)
+        # draw the center of the circle
+        cv2.circle(cimg, (i[0], i[1]), 2, (0, 0, 255), 3)
+
+    cv2.imshow('detected circles', cimg)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+def get_center(array_of_center_coords):
+    #need to find a way to remove outliers...
+    center_coords = array_of_center_coords.reshape((len(array_of_center_coords[0]),len(array_of_center_coords[0][0])))
+    center_x = int(np.sum(center_coords[:,0])/len(center_coords[:,0]))
+    center_y = int(np.sum(center_coords[:,1])/len(center_coords[:,1]))
+    spiral_center = np.array([[[center_x,center_y,10]]])
+    return spiral_center
+
+def crop_images(input_dict,y0=0,y1=723,x0=0,x1=1129):
+    dictionary = input_dict
+    for i in dictionary:
+        for j in range(2):
+            image = dictionary[i][j]
+            image = image[y0:y1,x0:x1]
+            dictionary[i][j] = image
+    return dictionary
