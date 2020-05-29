@@ -87,7 +87,7 @@ Then the center of mass of each contour is calculated and represents a single el
 
 print("processing images")
 lst_binary_preprocessed=img.calculate_binaries(dict_data)
-lst_cropped_binaries = img.crop_binaries(lst_binary_preprocessed)
+lst_cropped_binaries = img.crop_binaries(lst_binary_preprocessed,270)
 lst_individual_erosion = [img.individual_erosion(i) for i in lst_cropped_binaries]
 dict_of_electrode_centers = img.get_center_of_electrodes(lst_individual_erosion)
 plot_electrode_centers = True
@@ -100,7 +100,7 @@ if plot_electrode_centers:
         for coordinate in coords:
             x = coordinate[0]
             y = coordinate[1]
-            cv2.circle(dict_data[patient][1],(x,y),10,(0,0,255),-1)
+            cv2.circle(dict_data[patient][1],(x,y),7,(0,0,255),-1)
         plt.imshow(dict_data[patient][1])
         plt.show()
             
@@ -112,24 +112,25 @@ if plot_electrode_centers:
 # scipy.misc.imsave("afterErosion.jpg",lst_individual_erosion[8])
 # scipy.misc.imsave('afterFindingElectrodes.jpg', dict_data["18"][1]) 
 
-dict_erosion = {}
+#cropp more away from the lst_cropped_binaries and after that try to fit circle with houghtransform
+# to get the center of the cochlea.
+test_lst=img.crop_binaries(lst_binary_preprocessed, 420)
+dict_binaries = {}
 for patient in enumerate(dict_data):
-    print(patient)
-    dict_erosion[patient[1]]=lst_individual_erosion[patient[0]]
-
-
+    dict_binaries[patient[1]]=test_lst[patient[0]]
+    
 hough_circle_detection = True
 if hough_circle_detection:
     dict_of_centres = {}
     
-    for patient in dict_erosion:
+    for patient in dict_binaries:
         
-        image = dict_erosion[patient].astype("uint8")
-        image = cv2.GaussianBlur(image, (5,5), 3)
+        image = dict_binaries[patient].astype("uint8")
+        image = cv2.GaussianBlur(image, (5,5), 7)
         try:
-            circles_image = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 3, 10000, 
-                                                       param1=50, param2=30, minRadius=100, 
-                                                       maxRadius=150)
+            circles_image = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 3, 100000, 
+                                                       param1=50, param2=30, minRadius=80, 
+                                                       maxRadius=180)
             dict_of_centres[patient] = circles_image
             print(patient, "in try", "number of circles found:", len(circles_image[0]))
         except:
@@ -138,10 +139,9 @@ if hough_circle_detection:
 
     for i in dict_of_centres:  # use arrowkeys to go through the images
         print(i)
-        img.circles_show(dict_data[i][1], dict_of_centres[i])
+        img.circles_show(dict_binaries[i], dict_of_centres[i])
 
-print(dict_of_centres)
-
+    print(dict_of_centres)
 
 
 
