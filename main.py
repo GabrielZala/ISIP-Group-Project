@@ -8,7 +8,7 @@ import numpy as np
 """ first we need to decide if we want to recompute our data with different
 parameters """
 
-recompute_data = True
+recompute_data = False
 
 """ in this chapter we handle the preprocessing of our images, loading,
 cropping and normalizing """
@@ -103,7 +103,7 @@ if plot_electrode_centers:
         plt.imshow(dict_data[patient][1])
         plt.show()
 
-# save some plots at some points during pipeline for the report
+ # save some plots at some points during pipeline for the report
 # import scipy.misc
 # scipy.misc.imsave('afterWatermark.jpg', dict_data["18"][1]) 
 # scipy.misc.imsave("afterBinarization.jpg",lst_binary_preprocessed[8])

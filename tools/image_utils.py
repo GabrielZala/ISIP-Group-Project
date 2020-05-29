@@ -183,46 +183,6 @@ def distance_transform_binary(image_binary):  # , sampling_factor
     return image_distance_transform
 
 
-def watersheddy(image_bin):
-    import sys
-    import cv2
-    import numpy
-    from scipy.ndimage import label
-
-    def segment_on_dt(a, image):
-        border = cv2.dilate(image, None, iterations=5)
-        border = border - cv2.erode(border, None)
-
-        dt = cv2.distanceTransform(image, 2, 3)
-        dt = ((dt - dt.min()) / (dt.max() - dt.min()) * 255).astype(numpy.uint8)
-        show(dt)
-        _, dt = cv2.threshold(dt, 180, 255, cv2.THRESH_BINARY)
-        lbl, ncc = label(dt)
-        lbl = lbl * (255 / (ncc + 1))
-        # Completing the markers now.
-        lbl[border == 255] = 255
-
-        lbl = lbl.astype(numpy.int32)
-
-        cv2.watershed(a, lbl)
-
-        lbl[lbl == -1] = 0
-        lbl = lbl.astype(numpy.uint8)
-        return 255 - lbl
-
-    image_bin = image_bin
-    img_bin = cv2.morphologyEx(image_bin, cv2.MORPH_OPEN,
-                               numpy.ones((3, 3), dtype=int))
-
-    result = segment_on_dt(image_bin, img_bin)
-    cv2.imwrite(sys.argv[2], result)
-
-    result[result != 255] = 0
-    result = cv2.dilate(result, None)
-    image_bin[result == 255] = (0, 0, 255)
-    show(image_bin)
-
-
 def watershed(image, image_distance_transform):
     import sys
     import cv2
@@ -333,7 +293,7 @@ def calculate_binaries(dict_data):
     list_all_preprocessed_binaries = []
     for index_patient, patient in enumerate(dict_data):
         # pick and convert image
-        image = dict_data[patient][1]
+        image = dict_data[patient][0]
         image = image.astype("uint8")
         # blur image
         image_blurred = cv2.medianBlur(image, 29)
