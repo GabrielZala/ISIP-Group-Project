@@ -414,11 +414,9 @@ def individual_erosion(binary_image):
     lst =[]
     lst = area_of_each_contour(contours_lst)
     lst =sorted(lst, key=lambda x: x[0],reverse=True)
-    try:
-        largest_area = lst[0]
-        smallest_area = lst[-1]
-    except:
-        pass
+    print(lst)
+    largest_area = lst[0]
+    smallest_area = lst[-1]
     while largest_area[0]>(smallest_area[0]+250):
         #remove the largest contour from super_lst as it gets split
         del lst[0]

@@ -52,31 +52,6 @@ else:
     with open("dict_data_segmented.bin", "rb") as bin_file:
         dict_data_segmented = pickle.load(bin_file)
 
-"""for patient in dict_data_segmented:
-    img.plot_image_list(dict_data_segmented[patient])"""
-
-""" here we attempt to find circles in our image, once with image and once with it's edge map """
-#dict_data_cropped = methods.crop_images(dict_data_segmented, y0=100, y1=600, x0=150,x1=900)
-hough_circle_detection = False
-if hough_circle_detection:
-    dict_of_centres = {}
-    
-    for patient in dict_data_segmented:
-        
-        image = dict_data_segmented[patient][0].astype("uint8")
-        #image = cv2.medianBlur(image, 11)
-        try:
-            circles_image = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 3, 10000, 
-                                                       param1=50, param2=30, minRadius=100, 
-                                                       maxRadius=200)
-            dict_of_centres[patient] = circles_image
-            print(patient, "in try", "number of circles found:", len(circles_image[0]))
-        except:
-            print(patient, "returned None, ergo no circles found")
-            pass
-
-    for i in dict_of_centres:  # use arrowkeys to go through the images
-        img.circles_show(dict_data_segmented[i][0], dict_of_centres[i])
 
 """ this approach trys to find the electrodes using their intensities and contours.
 The images get first binarized where each image is thresholded by looking at their 
@@ -121,7 +96,7 @@ for patient in enumerate(dict_data):
     
 hough_circle_detection = True
 if hough_circle_detection:
-    dict_of_centres = {}
+    spiral_centres = {}
     
     for patient in dict_binaries:
         
@@ -131,17 +106,27 @@ if hough_circle_detection:
             circles_image = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 3, 100000, 
                                                        param1=50, param2=30, minRadius=80, 
                                                        maxRadius=180)
-            dict_of_centres[patient] = circles_image
+            spiral_centres[patient] = circles_image
             print(patient, "in try", "number of circles found:", len(circles_image[0]))
         except:
             print(patient, "returned None, ergo no circles found")
             pass
 
-    for i in dict_of_centres:  # use arrowkeys to go through the images
-        print(i)
-        img.circles_show(dict_binaries[i], dict_of_centres[i])
-
-    print(dict_of_centres)
+    for i in spiral_centres:  # use arrowkeys to go through the images
+        img.circles_show(dict_binaries[i], spiral_centres[i])
 
 
 
+# merge both dictionaries to have one with both spiral centres and electrode centres for each patient
+lst_electrodes = []
+for i in dict_of_electrode_centers:
+    lst_electrodes.append(dict_of_electrode_centers[i])
+dict_results = {}
+for i in enumerate(spiral_centres):
+    dict_results[i[1]]=spiral_centres[i[1]],lst_electrodes[i[0]]
+#to new dictionary to work is dict_results={PATIENTID:[SPIRALCENTER,ELECTRODES],...} 
+print(dict_results)
+save_results = False
+if save_results:
+    with open("dict_results.bin", "wb") as bin_file:
+        pickle.dump(dict_results, bin_file)
