@@ -82,7 +82,7 @@ def data_to_edges(dict_data, sigma_pre, sigma_post):
 
 def create_material_masks(dict_data):  # old idea, k-means is just kinda better
 
-    # set thresholds for bone/fluid/gas
+    # set thresholds for bone/fluid/auas
     t_bone = 150
     t_gas = 40
 
