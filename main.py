@@ -8,7 +8,7 @@ import numpy as np
 """ first we need to decide if we want to recompute our data with different
 parameters """
 
-recompute_data = True
+recompute_data = False
 
 """ in this chapter we handle the preprocessing of our images, loading,
 cropping and normalizing """
@@ -40,7 +40,7 @@ else:
         dict_data_edges = pickle.load(bin_file)
 
 """ Create a segmented image """
-recompute_segmented_images = True
+recompute_segmented_images = False
 if recompute_segmented_images or recompute_data:
     # create segmented images using K-means clustering
     print("recompute Segmented images")
@@ -84,6 +84,7 @@ intensity distribution. After that each binary image is  cropped at the "tail" o
 the cochlea, then the contours are extracted and get eroded depending of their area.
 bigger areas get eroded first until the biggest area is too small for further erosion.
 Then the center of mass of each contour is calculated and represents a single electrode"""
+
 print("processing images")
 lst_binary_preprocessed=img.calculate_binaries(dict_data)
 lst_cropped_binaries = img.crop_binaries(lst_binary_preprocessed)
@@ -111,10 +112,35 @@ if plot_electrode_centers:
 # scipy.misc.imsave("afterErosion.jpg",lst_individual_erosion[8])
 # scipy.misc.imsave('afterFindingElectrodes.jpg', dict_data["18"][1]) 
 
+dict_erosion = {}
+for patient in enumerate(dict_data):
+    print(patient)
+    dict_erosion[patient[1]]=lst_individual_erosion[patient[0]]
 
 
+hough_circle_detection = True
+if hough_circle_detection:
+    dict_of_centres = {}
+    
+    for patient in dict_erosion:
+        
+        image = dict_erosion[patient].astype("uint8")
+        image = cv2.GaussianBlur(image, (5,5), 3)
+        try:
+            circles_image = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 3, 10000, 
+                                                       param1=50, param2=30, minRadius=100, 
+                                                       maxRadius=150)
+            dict_of_centres[patient] = circles_image
+            print(patient, "in try", "number of circles found:", len(circles_image[0]))
+        except:
+            print(patient, "returned None, ergo no circles found")
+            pass
 
+    for i in dict_of_centres:  # use arrowkeys to go through the images
+        print(i)
+        img.circles_show(dict_data[i][1], dict_of_centres[i])
 
+print(dict_of_centres)
 
 
 

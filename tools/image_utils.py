@@ -358,14 +358,14 @@ def crop_binaries(list_of_binary_images):
     hits the edge of the image in order to reduce the area of possible electrodes
     returns a list of images all with the previous size of post OP images"""
     lst_cropped_binary = []
-    replacement_columns = np.zeros((723,250),dtype=int)
+    replacement_columns = np.zeros((723,270),dtype=int)
     for i in list_of_binary_images:
         if sum(i[:,0]) != 0: #if spiral starts left side remove some and add empty space
-            new_binary = i[:,250:]
+            new_binary = i[:,270:]
             new_binary = np.append(replacement_columns,new_binary,axis=1)
             lst_cropped_binary.append(new_binary.astype("uint8"))
         if sum(i[:,0]) == 0:
-            new_binary = i[:,:(1129-250)]
+            new_binary = i[:,:(1129-270)]
             new_binary = np.append(new_binary,replacement_columns,axis=1)
             lst_cropped_binary.append(new_binary.astype("uint8"))
     return lst_cropped_binary
@@ -421,8 +421,12 @@ def individual_erosion(binary_image):
     lst =[]
     lst = area_of_each_contour(contours_lst)
     lst =sorted(lst, key=lambda x: x[0],reverse=True)
-    largest_area = lst[0]
-    while largest_area[0]>2500:
+    try:
+        largest_area = lst[0]
+        smallest_area = lst[-1]
+    except:
+        pass
+    while largest_area[0]>(smallest_area[0]+1250):
         #remove the largest contour from super_lst as it gets split
         del lst[0]
         another_lst = erode_until_split(largest_area[1])
