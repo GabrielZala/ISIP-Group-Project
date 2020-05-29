@@ -126,7 +126,7 @@ for i in enumerate(spiral_centres):
     dict_results[i[1]]=spiral_centres[i[1]],lst_electrodes[i[0]]
 #to new dictionary to work is dict_results={PATIENTID:[SPIRALCENTER,ELECTRODES],...} 
 print(dict_results)
-save_results = False
+save_results = True
 if save_results:
     with open("dict_results.bin", "wb") as bin_file:
         pickle.dump(dict_results, bin_file)
