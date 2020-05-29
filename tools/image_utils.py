@@ -392,8 +392,7 @@ def area_of_each_contour(contours):
 
 def erode_until_split(image_of_largest_area_in_contour_dict):
     image = image_of_largest_area_in_contour_dict
-    contours = find_contours(image)
-
+    image = cv2.medianBlur(image, 11)
     image = ndi.binary_erosion(image,iterations=1).astype("uint8")
     contours = find_contours(image)
     #produce images from the two blops
@@ -409,15 +408,14 @@ def erode_until_split(image_of_largest_area_in_contour_dict):
 
 
 def individual_erosion(binary_image):
-    
     contours_lst = find_contours(binary_image)
     lst =[]
     lst = area_of_each_contour(contours_lst)
     lst =sorted(lst, key=lambda x: x[0],reverse=True)
-    print(lst)
+    print(lst[0])
     largest_area = lst[0]
     smallest_area = lst[-1]
-    while largest_area[0]>(smallest_area[0]+250):
+    while largest_area[0]>(smallest_area[0]):
         #remove the largest contour from super_lst as it gets split
         del lst[0]
         another_lst = erode_until_split(largest_area[1])
@@ -511,3 +509,16 @@ def crop_images(input_dict,y0=0,y1=723,x0=0,x1=1129):
             image = image[y0:y1,x0:x1]
             dictionary[i][j] = image
     return dictionary
+
+def create_circular_mask(h, w, center, radius):
+    Y, X = np.ogrid[:h, :w]
+    dist_from_center = np.sqrt((X - center[0])**2 + (Y-center[1])**2)
+    mask = dist_from_center <= radius
+    return mask
+
+def circle_cropping(image, center_entry, radius):
+    center = center_entry[0][0][0][0:2]
+    mask=create_circular_mask(723, 1129, center, radius)
+    masked_img = image.copy()
+    masked_img[~mask] = 0
+    return masked_img
