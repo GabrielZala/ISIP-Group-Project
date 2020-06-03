@@ -1,134 +1,6 @@
-from matplotlib import pyplot as plt
-from skimage import feature, color
 import numpy as np
-import copy
-from scipy.ndimage import morphology as mp
 import cv2 # conda install -c menpo opencv
 from scipy import ndimage as ndi
-def edge_map(image, sigma):
-    # Returns the edge map of a given image.
-    #
-    # Inputs:
-    #   img: image of shape (n, m, 3) or (n, m)
-    #
-    # Outputs:
-    #   edges: the edge map of image
-
-    img_grayscale = color.rgb2gray(image)
-    img_edges = feature.canny(img_grayscale, sigma)
-
-    return img_edges
-
-
-def show(image_array):
-    plt.imshow(image_array)
-    plt.show()
-
-
-def plot_image_list(list_images):
-    # get how many images you want to plot horizontally
-    nCols = len(list_images)
-    nRows = 1
-
-    # commence plotting
-    for index_image, image in enumerate(list_images, 1):  # start at 1 because of shitty pyplot indexing
-        plt.subplot(nRows, nCols, index_image)  # open subplot space to plot to
-        plt.imshow(image)  # plot the image into subplot space
-
-    plt.show()  # show plotted images
-
-
-def plot_preprocessed_image(list_images):
-    # get how many images you want to plot horizontally
-    nCols = 4
-    nRows = 3
-
-    # commence plotting
-    for index_image, image in enumerate(list_images, 1):  # start at 1 because of shitty pyplot indexing
-        plt.subplot(nRows, nCols, index_image)  # open subplot space to plot to
-        plt.imshow(image)  # plot the image into subplot space
-
-    plt.show()  # show plotted images
-
-
-def test_sigmas(data, testing_range=range(10, 15, 1), pre_or_post=0, patient="03"):
-    sample_image = data[patient][pre_or_post]
-
-    list_image_edge_maps = []
-
-    for sigma in testing_range:
-        edge_map_current_sigma = edge_map(sample_image, sigma)
-        list_image_edge_maps.append(edge_map_current_sigma)
-
-    plot_image_list(list_image_edge_maps)
-
-
-def data_to_edges(dict_data, sigma_pre, sigma_post):
-    dict_data_edges = {}
-
-    for patient in dict_data:
-        # read images
-        image_pre = dict_data[patient][0]
-        image_post = dict_data[patient][1]
-
-        # create their respective edge maps
-        edge_map_pre = edge_map(image_pre, sigma_pre)
-        edge_map_post = edge_map(image_post, sigma_post)
-
-        dict_data_edges[patient] = [edge_map_pre, edge_map_post]  # add to edge dictionary
-
-    return dict_data_edges
-
-
-def create_material_masks(dict_data):  # old idea, k-means is just kinda better
-
-    # set thresholds for bone/fluid/auas
-    t_bone = 150
-    t_gas = 40
-
-    for patient in dict_data:
-
-        image_pre = dict_data[patient][0]  # [600:640, 540:600]
-        image_post = dict_data[patient][1]
-
-        image_pre_bone = copy.copy(image_pre)
-        image_pre_fluid = copy.copy(image_pre)
-        image_pre_gas = copy.copy(image_pre)
-
-        for i_rows, row in enumerate(image_pre):
-            for i_cols, value in enumerate(row):
-                if value >= t_bone:
-                    image_pre_bone[i_rows, i_cols] = 1
-                    image_pre_fluid[i_rows, i_cols] = 0
-                    image_pre_gas[i_rows, i_cols] = 0
-
-                elif value <= t_gas:
-                    image_pre_bone[i_rows, i_cols] = 0
-                    image_pre_fluid[i_rows, i_cols] = 0
-                    image_pre_gas[i_rows, i_cols] = 1
-
-                else:
-                    image_pre_bone[i_rows, i_cols] = 0
-                    image_pre_fluid[i_rows, i_cols] = 1
-                    image_pre_gas[i_rows, i_cols] = 0
-
-        plot_image_list([image_pre_bone, image_pre_fluid, image_pre_gas])
-
-    return None
-
-
-def equalize_histogram(image, number_bins=256):
-    # from http://www.janeriksolem.net/2009/06/histogram-equalization-with-python-and.html
-
-    # get image histogram
-    image_histogram, bins = np.histogram(image.flatten(), number_bins, density=True)
-    cdf = image_histogram.cumsum()  # cumulative distribution function
-    cdf = 255 * cdf / cdf[-1]  # normalize
-
-    # use linear interpolation of cdf to find new pixel values
-    image_equalized = np.interp(image.flatten(), bins[:-1], cdf)
-
-    return image_equalized.reshape(image.shape)
 
 
 def intelligent_get_threshold(image, fraction_of_image_threshold=0.06, print_info=False):
@@ -159,112 +31,13 @@ def intelligent_get_threshold(image, fraction_of_image_threshold=0.06, print_inf
             lower_threshold_for_binarizing = list_keys_sorted_inverse[index_bin]
             if print_info:
                 print("bin for last image", lower_threshold_for_binarizing)
+            
+            if lower_threshold_for_binarizing == list_keys_sorted_inverse[0]:
+                return lower_threshold_for_binarizing - 1   # this is to prevent image 2 from vanishing
             return lower_threshold_for_binarizing
 
 
-def normalize_image(image):  # from https://en.wikipedia.org/wiki/Normalization_(image_processing)
 
-    max_old = np.max(image)
-    max_new = 255
-
-    min_old = np.min(image)
-    min_new = 0
-
-    image = ((image - np.min(image)) / ((max_new - min_new) / (max_old - min_old))) + min_new
-
-    return image
-
-
-def distance_transform_binary(image_binary):  # , sampling_factor
-    image_distance_transform = cv2.distanceTransform(image_binary, 2, 3)
-    # image_distance_transform = mp.distance_transform_edt(image_binary, sampling=sampling_factor, return_distances=True, return_indices=False)
-    return image_distance_transform
-
-
-def watersheddy(image_bin):
-    import sys
-    import cv2
-    import numpy
-    from scipy.ndimage import label
-
-    def segment_on_dt(a, image):
-        border = cv2.dilate(image, None, iterations=5)
-        border = border - cv2.erode(border, None)
-
-        dt = cv2.distanceTransform(image, 2, 3)
-        dt = ((dt - dt.min()) / (dt.max() - dt.min()) * 255).astype(numpy.uint8)
-        show(dt)
-        _, dt = cv2.threshold(dt, 180, 255, cv2.THRESH_BINARY)
-        lbl, ncc = label(dt)
-        lbl = lbl * (255 / (ncc + 1))
-        # Completing the markers now.
-        lbl[border == 255] = 255
-
-        lbl = lbl.astype(numpy.int32)
-
-        cv2.watershed(a, lbl)
-
-        lbl[lbl == -1] = 0
-        lbl = lbl.astype(numpy.uint8)
-        return 255 - lbl
-
-    image_bin = image_bin
-    img_bin = cv2.morphologyEx(image_bin, cv2.MORPH_OPEN,
-                               numpy.ones((3, 3), dtype=int))
-
-    result = segment_on_dt(image_bin, img_bin)
-    cv2.imwrite(sys.argv[2], result)
-
-    result[result != 255] = 0
-    result = cv2.dilate(result, None)
-    image_bin[result == 255] = (0, 0, 255)
-    show(image_bin)
-
-
-def watershed(image, image_distance_transform):
-    import sys
-    import cv2
-    import numpy
-    from scipy.ndimage import label
-
-    border = cv2.dilate(image_distance_transform, None, iterations=5)
-    border = border - cv2.erode(border, None)
-
-    plotlist = [image_distance_transform]
-    image_distance_transform = ((image_distance_transform - image_distance_transform.min()) / (
-                image_distance_transform.max() - image_distance_transform.min()) * 255).astype(numpy.uint8)
-    plotlist.append(image_distance_transform)
-
-    image_distance_transform = cv2.threshold(image_distance_transform, 180, 255, cv2.THRESH_BINARY)[1]
-
-    plotlist.append(image_distance_transform)
-
-    # plot_image_list(plotlist)
-
-    lbl, ncc = label(image_distance_transform)
-    lbl = lbl * (255 / (ncc + 1))
-
-    # Completing the markers now.
-    lbl[border == 255] = 255
-
-    lbl = lbl.astype(numpy.int32)
-
-
-
-    image_shape = np.shape(image)
-
-    image_converted = np.empty(shape=(image_shape[0], image_shape[1], 3))
-    for channel in range(3):
-        image_converted[:, :, channel] = image
-
-    print(lbl.dtype)
-    print(image.dtype)
-
-    print(np.shape(image_converted))
-    cv2.watershed(image, lbl)
-    lbl[lbl == -1] = 0
-    lbl = lbl.astype(numpy.uint8)
-    return 255 - lbl
 
 def run_kmean_on_single_image(image_array, k, precision=10, max_iterations=0.1):
 
@@ -295,29 +68,7 @@ def run_kmean_on_single_image(image_array, k, precision=10, max_iterations=0.1):
     return res2
 
 
-def segment_img_data(dict_data, k_pre=3, k_post=3):
 
-    Ks = [k_pre, k_post]
-
-    dict_data_segmented = {}
-
-    for patient in dict_data:
-
-        segmented_images_current_patient = []
-
-        for i in range(2):  # for pre and post image, hence indices [0, 1]
-
-            # get pre image & K-parameter
-            image = dict_data[patient][i]
-            K = Ks[i]
-
-            segmented_image = run_kmean_on_single_image(image, K)  # generate segmented image
-
-            segmented_images_current_patient.append(segmented_image)   # append segmented image to list
-
-        dict_data_segmented[patient] = segmented_images_current_patient  # add patient images to data dictionary
-
-    return dict_data_segmented
 
 #########################cudi's stuff####################
 # binarize image
@@ -412,7 +163,6 @@ def individual_erosion(binary_image):
     lst =[]
     lst = area_of_each_contour(contours_lst)
     lst =sorted(lst, key=lambda x: x[0],reverse=True)
-    print(lst[0])
     largest_area = lst[0]
     smallest_area = lst[-1]
     while largest_area[0]>(smallest_area[0]):
@@ -453,7 +203,6 @@ def get_center_of_electrodes(lst_of_images):
                 cX, cY = 0, 0
             coords = [cX, cY]
             lst_of_centers.append(coords)
-        print("number of centres found", len(lst_of_centers))
         result_dict[counter] = lst_of_centers  
         counter += 1
     return result_dict
@@ -493,32 +242,20 @@ def circles_show(image, circles):
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
-def get_center(array_of_center_coords):
-    #need to find a way to remove outliers...
-    center_coords = array_of_center_coords.reshape((len(array_of_center_coords[0]),len(array_of_center_coords[0][0])))
-    center_x = int(np.sum(center_coords[:,0])/len(center_coords[:,0]))
-    center_y = int(np.sum(center_coords[:,1])/len(center_coords[:,1]))
-    spiral_center = np.array([[[center_x,center_y,10]]])
-    return spiral_center
-
-def crop_images(input_dict,y0=0,y1=723,x0=0,x1=1129):
-    dictionary = input_dict
-    for i in dictionary:
-        for j in range(2):
-            image = dictionary[i][j]
-            image = image[y0:y1,x0:x1]
-            dictionary[i][j] = image
-    return dictionary
-
-def create_circular_mask(h, w, center, radius):
-    Y, X = np.ogrid[:h, :w]
-    dist_from_center = np.sqrt((X - center[0])**2 + (Y-center[1])**2)
-    mask = dist_from_center <= radius
-    return mask
-
-def circle_cropping(image, center_entry, radius):
-    center = center_entry[0][0][0][0:2]
-    mask=create_circular_mask(723, 1129, center, radius)
-    masked_img = image.copy()
-    masked_img[~mask] = 0
-    return masked_img
+def get_angle(center, electrodes):
+  """
+  Description: calculates the angel between a center and two points
+  Input: center: tuple of x and y
+         electrodes: list of two tuples
+  Return: phi: angle in degrees as float
+  """
+  
+  ### calculate (euclidean) distances of the triangle
+  a = np.linalg.norm(electrodes[0]-electrodes[1])
+  b = np.linalg.norm(center-electrodes[0])
+  c = np.linalg.norm(center-electrodes[1])
+  
+  ### apply cosine rule
+  phi = np.degrees(np.arccos((b**2 + c**2 - a**2) / (2*b*c)))
+  
+  return phi

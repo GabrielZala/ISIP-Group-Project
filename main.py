@@ -1,64 +1,12 @@
 import cv2
 import tools.data_manager as data_manager
-import pickle
 import tools.image_utils as img
 from matplotlib import pyplot as plt
 import numpy as np
 
-""" first we need to decide if we want to recompute our data with different
-parameters """
-
-recompute_data = False
-
-""" in this chapter we handle the preprocessing of our images, loading,
-cropping and normalizing """
-reload_images = True
-if reload_images or recompute_data:
-    # load, crop and normalize our images and store them
-    # into a dictionary {patient_label:[array_pre, array_post]}
-    print("load data from .png files")
-    dict_data = data_manager.read_pictures()
-    with open("dict_data.bin", "wb") as bin_file:
-        pickle.dump(dict_data, bin_file)
-else:
-    print("load data from dictionary")
-    with open("dict_data.bin", "rb") as bin_file:
-        dict_data = pickle.load(bin_file)
-
-""" in this chapter i transform the dictionary """
-recompute_image_edges = False
-if recompute_image_edges or recompute_data:
-    # create edge maps of images
-    print("create edge maps from images")
-    dict_data_edges = img.data_to_edges(dict_data, sigma_pre=40, sigma_post=40)
-    with open("dict_data_edges.bin", "wb") as bin_file:
-        pickle.dump(dict_data_edges, bin_file)
-
-else:
-    print("load edge maps from dictionary")
-    with open("dict_data_edges.bin", "rb") as bin_file:
-        dict_data_edges = pickle.load(bin_file)
-
-""" Create a segmented image """
-recompute_segmented_images = False
-if recompute_segmented_images or recompute_data:
-    # create segmented images using K-means clustering
-    print("recompute Segmented images")
-    dict_data_segmented = img.segment_img_data(dict_data, 3, 3)
-    with open("dict_data_segmented.bin", "wb") as bin_file:
-        pickle.dump(dict_data_segmented, bin_file)
-else:
-    print("load segmented images from pickle")
-    with open("dict_data_segmented.bin", "rb") as bin_file:
-        dict_data_segmented = pickle.load(bin_file)
 
 
-""" this approach trys to find the electrodes using their intensities and contours.
-The images get first binarized where each image is thresholded by looking at their 
-intensity distribution. After that each binary image is  cropped at the "tail" of 
-the cochlea, then the contours are extracted and get eroded depending of their area.
-bigger areas get eroded first until the biggest area is too small for further erosion.
-Then the center of mass of each contour is calculated and represents a single electrode"""
+dict_data = data_manager.read_pictures()
 
 print("processing images")
 lst_binary_preprocessed=img.calculate_binaries(dict_data)
@@ -76,16 +24,9 @@ if plot_electrode_centers:
             x = coordinate[0]
             y = coordinate[1]
             cv2.circle(dict_data[patient][1],(x,y),7,(0,0,255),-1)
-        plt.imshow(dict_data[patient][1])
-        plt.show()
+        #plt.imshow(dict_data[patient][1])
+        #plt.show()
             
-#save some plots at some points during pipeline for the report
-# import scipy.misc
-# scipy.misc.imsave('afterWatermark.jpg', dict_data["18"][1]) 
-# scipy.misc.imsave("afterBinarization.jpg",lst_binary_preprocessed[8])
-# scipy.misc.imsave("afterCropping.jpg",lst_cropped_binaries[8])
-# scipy.misc.imsave("afterErosion.jpg",lst_individual_erosion[8])
-# scipy.misc.imsave('afterFindingElectrodes.jpg', dict_data["18"][1]) 
 
 #cropp more away from the lst_cropped_binaries and after that try to fit circle with houghtransform
 # to get the center of the cochlea.
@@ -107,26 +48,126 @@ if hough_circle_detection:
                                                        param1=50, param2=30, minRadius=80, 
                                                        maxRadius=180)
             spiral_centres[patient] = circles_image
-            print(patient, "in try", "number of circles found:", len(circles_image[0]))
+            
         except:
-            print(patient, "returned None, ergo no circles found")
+            print("no circle found")
             pass
 
-    for i in spiral_centres:  # use arrowkeys to go through the images
-        img.circles_show(dict_binaries[i], spiral_centres[i])
+    # for i in spiral_centres:  # use arrowkeys to go through the images
+    #     img.circles_show(dict_binaries[i], spiral_centres[i])
 
 # merge both dictionaries to have one with both spiral centres and electrode centres for each patient
 lst_electrodes = []
 for i in dict_of_electrode_centers:
     lst_electrodes.append(dict_of_electrode_centers[i])
-dict_results = {}
+    
+center_dict = {}
 for i in enumerate(spiral_centres):
-    dict_results[i[1]]=[spiral_centres[i[1]],lst_electrodes[i[0]]]
-#to new dictionary to work is dict_results={PATIENTID:[SPIRALCENTER,ELECTRODES],...} 
-print(dict_results)
-save_results = True
-if save_results:
-    with open("dict_results.bin", "wb") as bin_file:
-        pickle.dump(dict_results, bin_file)
+    center_dict[i[1]]=[spiral_centres[i[1]],lst_electrodes[i[0]]]
+        
+
+##################################################################
+# start the loop over all patients
+##################################################################
+
+for patientID in center_dict.keys():
+  print("\n### patient:", patientID, "###")
+  
+  electrodes = np.array(center_dict[patientID][1])
+  n_el = len(electrodes)
+  center = np.array(center_dict[patientID][0][0][0][:-1])
+  
+##################################################################
+# delete outermost electrodes if there are > 12
+##################################################################
+
+  # crop the electrodes that are most distant to the cochlear center if the
+  # number of electrodes is bigger than 12
+  while n_el > 12:
+    #print("I'm cropping")
+    tmp_dists = []
+    
+    # calculate the distances of all electrodes to the center
+    for i in range(n_el):
+      tmp_dists.append(np.linalg.norm(np.array(center-electrodes[i])))
+    
+    # take index of most distant electrode and delete the electrode
+    my_index = np.where(tmp_dists == np.amax(tmp_dists))[0][0]
+    electrodes = np.delete(electrodes, my_index, axis=0)
+    
+    # update the number of electrodes so that the loop will eventually terminate
+    n_el = len(electrodes)
+
+  # update the center_dict to hold only the 12 remaining electrodes
+  center_dict[patientID][1] = electrodes.tolist()
+
+
+##################################################################
+# get the order of the electrodes regarding the center distance
+##################################################################
+
+  # calculate the distances of all electrodes to the center
+  tmp_dists = []
+  for i in range(n_el):
+    tmp_dists.append(np.linalg.norm(np.array(center-electrodes[i])))
+    
+  ordered_idx_of_electrodes = []
+  for i in range(n_el):
+    my_index = np.where(tmp_dists == np.amax(tmp_dists))[0][0]
+    ordered_idx_of_electrodes.append(my_index)
+    tmp_dists[my_index] = 0
+    
+  #print("electrode order:", ordered_idx_of_electrodes)
+
+
+##################################################################
+# plot the indexed images
+##################################################################
+  
+  radius_dot = 7
+  
+  pic_to_plot = dict_data[patientID][1]
+  
+  pic_to_plot = cv2.cvtColor(pic_to_plot.astype("uint8"), cv2.COLOR_GRAY2BGR)
+  # show the cochlear center
+  cv2.circle(pic_to_plot, tuple(center), radius_dot, (255,0,0), -1)
+  # show the electrode centers
+  for e_nbr, electrode in enumerate(electrodes):
+    # draw electrodes
+    cv2.circle(pic_to_plot, tuple(electrode), radius_dot, (255,255,0), -1)
+    cv2.circle(pic_to_plot, tuple(electrode), radius_dot+2, (0,0,255), 2)
+    
+    # label the electrodes
+    plt.text(electrodes[ordered_idx_of_electrodes[e_nbr]][0],
+              electrodes[ordered_idx_of_electrodes[e_nbr]][1],
+              str(e_nbr), c=(1, 0, 0))
+    
+  plt.title("Patient: " + patientID)
+  plt.imshow(pic_to_plot)
+  #plt.savefig(patientID+'jpg')
+  plt.show()
+   
+
+##################################################################
+# calculate the angles by the given order of the electrodes
+##################################################################
+  
+  # store the cummulated angles in a list (going from outside to inside)
+  angle_lst = []
+  print("############################################")
+  print("center:", center)
+  print("x,    y,    angle")
+  for i in range(n_el):
+      if i == 0:
+          print(electrodes[0], "0")
+      elif i == 1: # store the first angle as it is
+          angle = img.get_angle(center, (electrodes[i-1], electrodes[i]))
+          angle_lst.append(angle)
+          print(electrodes[i], int(round(angle, 0)))
+      else: # store the following angles as sums
+          angle = angle_lst[-1] + img.get_angle(center, (electrodes[i-1], electrodes[i]))
+          angle_lst.append(angle)
+          print(electrodes[i], int(round(angle, 0)))
+  print("############################################")
 
 
