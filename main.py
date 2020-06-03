@@ -89,7 +89,7 @@ if plot_electrode_centers:
 
 #cropp more away from the lst_cropped_binaries and after that try to fit circle with houghtransform
 # to get the center of the cochlea.
-test_lst=img.crop_binaries(lst_binary_preprocessed, 420)
+test_lst=img.crop_binaries(lst_binary_preprocessed, 430)
 dict_binaries = {}
 for patient in enumerate(dict_data):
     dict_binaries[patient[1]]=test_lst[patient[0]]
@@ -101,7 +101,7 @@ if hough_circle_detection:
     for patient in dict_binaries:
         
         image = dict_binaries[patient].astype("uint8")
-        image = cv2.GaussianBlur(image, (5,5), 7)
+        image = cv2.GaussianBlur(image, (5,5), 10)
         try:
             circles_image = cv2.HoughCircles(image, cv2.HOUGH_GRADIENT, 3, 100000, 
                                                        param1=50, param2=30, minRadius=80, 
@@ -115,18 +115,18 @@ if hough_circle_detection:
     for i in spiral_centres:  # use arrowkeys to go through the images
         img.circles_show(dict_binaries[i], spiral_centres[i])
 
-
-
 # merge both dictionaries to have one with both spiral centres and electrode centres for each patient
 lst_electrodes = []
 for i in dict_of_electrode_centers:
     lst_electrodes.append(dict_of_electrode_centers[i])
 dict_results = {}
 for i in enumerate(spiral_centres):
-    dict_results[i[1]]=spiral_centres[i[1]],lst_electrodes[i[0]]
+    dict_results[i[1]]=[spiral_centres[i[1]],lst_electrodes[i[0]]]
 #to new dictionary to work is dict_results={PATIENTID:[SPIRALCENTER,ELECTRODES],...} 
 print(dict_results)
 save_results = True
 if save_results:
     with open("dict_results.bin", "wb") as bin_file:
         pickle.dump(dict_results, bin_file)
+
+
